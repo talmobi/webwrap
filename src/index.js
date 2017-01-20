@@ -145,6 +145,7 @@ var output = (`
     } else {
       style.appendChild(document.createTextNode(css))
     }
+    head.appendChild(style)
 
     ;(function (${params.join(',')}) {
       var ${_initFnName} = function () {
