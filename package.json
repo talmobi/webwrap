@@ -1,6 +1,6 @@
 {
   "name": "imprison",
-  "version": "0.0.7",
+  "version": "0.0.8",
   "description": "wrap files inside an immediately invoked function and specify calling context",
   "main": "index.js",
   "bin": {
