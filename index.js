@@ -4,7 +4,7 @@ var argv = require('minimist')(process.argv.slice(2))
 
 var params = argv.p || []
 var args = argv.a || []
-var context = argv.c || ''
+var context = argv.c || 'this'
 
 if (!Array.isArray(argv)) params = [params]
 if (!Array.isArray(argv)) args = [args]
