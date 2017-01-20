@@ -1,6 +1,3 @@
-script file: file1.js
-script file: file2.js
-style file: styles.css
 
   ;(function () {
     ;
@@ -30,7 +27,7 @@ if (typeof Object.assign != 'function') {
 }
 ;
 
-    var css = 'html{background:#222;color:#eee;}';
+    var css = 'html{background:#222;color:#eee}';
     var head = document.head || document.getElementsByName('head')[0];
     var style = document.createElement('style');
     style.type = 'text/css';
@@ -41,13 +38,13 @@ if (typeof Object.assign != 'function') {
     }
 
     ;(function (window) {
-      var _initFnName59be2f8d6530108 = function () {
+      var _initFnName59be3f70c345071 = function () {
         ;console.log('giraffe')
 window.giraffeName = 'David'
 ;console.log(window.giraffeName)
 ;
       };
-      _initFnName59be2f8d6530108.call(window)
+      _initFnName59be3f70c345071.call(window)
     })((window ? Object.assign({}, window || {}) : window));
   })();
 

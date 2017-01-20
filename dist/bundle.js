@@ -109,7 +109,9 @@ function UID () {
 
 var _initFnName = '_initFnName' + UID();
 
-var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('');
+// var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
+var CleanCSS = require('clean-css');
+var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles;
 
 var output = (("\n  ;(function () {\n    ;" + (polyfills.join(';')) + ";\n\n    var css = '" + cssText + "';\n    var head = document.head || document.getElementsByName('head')[0];\n    var style = document.createElement('style');\n    style.type = 'text/css';\n    if (style.styleSheet) {\n      style.styleSheet.cssText = css;\n    } else {\n      style.appendChild(document.createTextNode(css))\n    }\n\n    ;(function (" + (params.join(',')) + ") {\n      var " + _initFnName + " = function () {\n        ;" + (buffers.scripts.join(';')) + ";\n      };\n      " + _initFnName + ".call(" + context + ")\n    })(" + (args.join(',')) + ");\n  })();\n"));
 

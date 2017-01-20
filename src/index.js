@@ -128,7 +128,9 @@ function UID () {
 
 var _initFnName = '_initFnName' + UID()
 
-var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
+// var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
+var CleanCSS = require('clean-css')
+var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles
 
 var output = (`
   ;(function () {
