@@ -82,13 +82,13 @@ var buffers = {
 }
 
 scripts[0] && scripts.forEach(function (file) {
-  console.log('script file: ' + file)
+  // console.log('script file: ' + file)
   var buffer = fs.readFileSync(file, 'utf8')
   buffers.scripts.push(buffer)
 })
 
 styles[0] && styles.forEach(function (file) {
-  console.log('style file: ' + file)
+  // console.log('style file: ' + file)
   var buffer = fs.readFileSync(file, 'utf8')
   buffers.styles.push(buffer)
 })
