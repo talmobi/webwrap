@@ -15,8 +15,8 @@
   "author": "talmobi <talmo.christian@gmail.com>",
   "license": "MIT",
   "dependencies": {
-    "clean-css": "^3.4.24",
-    "minimist": "^1.2.0"
+    "clean-css": "3.4.24",
+    "minimist": "1.2.0"
   },
   "devDependencies": {
     "rollup": "^0.41.4",
