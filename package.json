@@ -9,10 +9,8 @@
   "scripts": {
     "prepublish": "npm run build",
     "build": "rollup -c rollup.config.js",
-    "pretest": "npm run build && npm run build:test",
-    "build:test": "cd test && ../cli.js -s style.css file1.js file2.js --output test-output.js",
-    "test": "tape test/test.js | tap-spec",
-    "test-output": "browserify test/test-output.js | tape-run"
+    "pretest": "npm run build",
+    "test": "tape test/test.js | tap-spec"
   },
   "keywords": [
     "webwrap",
@@ -27,13 +25,11 @@
     "minimist": "1.2.0"
   },
   "devDependencies": {
-    "browserify": "^13.3.0",
     "jsdom": "^9.9.1",
     "rollup": "^0.41.4",
     "rollup-plugin-buble": "^0.15.0",
     "standard": "^8.6.0",
     "tap-spec": "^4.1.1",
-    "tape": "^4.6.3",
-    "tape-run": "^2.1.5"
+    "tape": "^4.6.3"
   }
 }
