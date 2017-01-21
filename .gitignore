@@ -1,7 +1,7 @@
 node_modules
 
-" vim temp files
+coverage
+
 *.sw?
 
-" mac files
 *.DS_Store

@@ -1,3 +1,3 @@
 #!/usr/bin/env node
 
-require('./dist/bundle.js')
+console.log(require('./dist/bundle.js')(process.argv))
