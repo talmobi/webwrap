@@ -14,15 +14,18 @@ var argv = require('minimist')(process.argv.slice(2), {
     'styles': ['s', 'style'],
     'version': ['v'],
     'help': ['h'],
-    'output': ['o']
+    'output': ['o'],
+    'disable-defaults': ['disable-default'],
+    'disable-polyfills': ['disable-polyfill'],
   }
 });
 
 var usage = [
     ''
-  , '  Usage: imprison [options] <file.js>... > output.js'
-  , '    imprison -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
-  , '    imprison -c window -p window -a window <file.js>... > output.js'
+  , '  Usage: webwrap [options] <file.js>... > output.js'
+  , '    webwrap [options] <file.js>... --output output.js'
+  , '    webwrap -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
+  , '    webwrap -c window -p window -a window <file.js>... > output.js'
   , ''
   , '  Options:'
   , ''
@@ -35,15 +38,25 @@ var usage = [
   , '                                   Plase note that parameters and arguments are'
   , '                                   passed in in the order used.'
   , ''
-  , '    -c, --context <string>         Calling context (\'this\' by default)'
-  , '                                   function.call(context || \'this\')'
+  , '    -c, --context <string>         Calling context.'
+  , '                                   wrapperInitFunction.call(context || \'this\')'
+  , '                                   \'window\' by default'
+  , '                                   \'this\' by default with --disable-defaults flag'
   , ''
-  , '    -s, --styles <string>          Css files to embed within the output.'
+  , '    -s, --styles <file>            Css files to embed within the output.'
   , '                                   Styles are appended to document.head before'
   , '                                   scripts get initialized.'
   , ''
-  , '    --disable-object-assign        Disable Object.assig wrapping of arguments.'
+  , '    --disable-polyfills            Disable polyfills (Object.assign polyfill)'
+  , ''
+  , '    --disable-object-assign        Disable Object.assign wrapping of truthy arguments.'
   , '                                   Object.assign({}, arg || {})'
+  , ''
+  , '    --disable-defaults             Disable \'window\' as a default parameter, argument,'
+  , '                                   and context.'
+  , '                                   webwrap -c window -p window -a window'
+  , ''
+  , '    -o, --output                   Output file (stdout by default).'
   , ''
   , '    -v, --version                  Display version'
   , '    -h, --help                     Display help information (this text)'
@@ -65,15 +78,28 @@ if (!!argv['version'] || !!argv['v']) {
 
 var params = argv.p || [];
 var args = argv.a || [];
-var context = argv.c || 'this';
+var context = argv.c;
 var styles = argv.s;
+
+if (!context) {
+  if (!argv['disable-defaults']) {
+    context = 'window';
+  } else {
+    context = 'this';
+  }
+}
 
 if (!Array.isArray(argv)) { params = [params]; }
 if (!Array.isArray(argv)) { args = [args]; }
 
+if (!argv['disable-defaults']) {
+  params.push('window');
+  args.push('window');
+}
+
 if (!argv['disable-object-assign']) {
   args = args.map(function (arg) {
-    if (arg.split(' ').length > 1) { return arg }
+    if (arg.split(' ').length > 1) { return arg } // wrap single words only
     return '(arg ? Object.assign({}, arg || {}) : arg)'.split('arg').join(arg)
   });
 }
@@ -104,15 +130,16 @@ var polyfills = [
 "\nif (typeof Object.assign != 'function') {\n  Object.assign = function (target, varArgs) { // .length of function is 2\n    'use strict';\n    if (target == null) { // TypeError if undefined or null\n      throw new TypeError('Cannot convert undefined or null to object');\n    }\n\n    var to = Object(target);\n\n    for (var index = 1; index < arguments.length; index++) {\n      var nextSource = arguments[index];\n\n      if (nextSource != null) { // Skip over if undefined or null\n        for (var nextKey in nextSource) {\n          // Avoid bugs when hasOwnProperty is shadowed\n          if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {\n            to[nextKey] = nextSource[nextKey];\n          }\n        }\n      }\n    }\n    return to;\n  };\n}\n"
 ];
 
+if (!!argv['disable-polyfills']) {
+  polyfills = [''];
+}
+
 function UID () {
   return Date.now().toString(16).slice(-10) + String(Math.floor(Math.random() * (1 << 16)))
 }
 
 var _initFnName = '_initFnName' + UID();
 
-// var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
-// var CleanCSS = require('clean-css')
-// var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles
 var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"');
 
 var output = (("\n  ;(function () {\n    ;" + (polyfills.join(';')) + ";\n\n    var css = '" + cssText + "';\n    var head = document.head || document.getElementsByName('head')[0];\n    var style = document.createElement('style');\n    style.type = 'text/css';\n    if (style.styleSheet) {\n      style.styleSheet.cssText = css;\n    } else {\n      style.appendChild(document.createTextNode(css))\n    }\n    head.appendChild(style)\n\n    ;(function (" + (params.join(',')) + ") {\n      var " + _initFnName + " = function () {\n        ;" + (buffers.scripts.join(';')) + ";\n      };\n      " + _initFnName + ".call(" + context + ")\n    })(" + (args.join(',')) + ");\n  })();\n"));

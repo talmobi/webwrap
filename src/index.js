@@ -8,15 +8,18 @@ var argv = require('minimist')(process.argv.slice(2), {
     'styles': ['s', 'style'],
     'version': ['v'],
     'help': ['h'],
-    'output': ['o']
+    'output': ['o'],
+    'disable-defaults': ['disable-default'],
+    'disable-polyfills': ['disable-polyfill'],
   }
 })
 
 var usage = [
     ''
-  , '  Usage: imprison [options] <file.js>... > output.js'
-  , '    imprison -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
-  , '    imprison -c window -p window -a window <file.js>... > output.js'
+  , '  Usage: webwrap [options] <file.js>... > output.js'
+  , '    webwrap [options] <file.js>... --output output.js'
+  , '    webwrap -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
+  , '    webwrap -c window -p window -a window <file.js>... > output.js'
   , ''
   , '  Options:'
   , ''
@@ -29,15 +32,25 @@ var usage = [
   , '                                   Plase note that parameters and arguments are'
   , '                                   passed in in the order used.'
   , ''
-  , '    -c, --context <string>         Calling context (\'this\' by default)'
-  , '                                   function.call(context || \'this\')'
+  , '    -c, --context <string>         Calling context.'
+  , '                                   wrapperInitFunction.call(context || \'this\')'
+  , '                                   \'window\' by default'
+  , '                                   \'this\' by default with --disable-defaults flag'
   , ''
-  , '    -s, --styles <string>          Css files to embed within the output.'
+  , '    -s, --styles <file>            Css files to embed within the output.'
   , '                                   Styles are appended to document.head before'
   , '                                   scripts get initialized.'
   , ''
-  , '    --disable-object-assign        Disable Object.assig wrapping of arguments.'
+  , '    --disable-polyfills            Disable polyfills (Object.assign polyfill)'
+  , ''
+  , '    --disable-object-assign        Disable Object.assign wrapping of truthy arguments.'
   , '                                   Object.assign({}, arg || {})'
+  , ''
+  , '    --disable-defaults             Disable \'window\' as a default parameter, argument,'
+  , '                                   and context.'
+  , '                                   webwrap -c window -p window -a window'
+  , ''
+  , '    -o, --output                   Output file (stdout by default).'
   , ''
   , '    -v, --version                  Display version'
   , '    -h, --help                     Display help information (this text)'
@@ -59,15 +72,28 @@ if (!!argv['version'] || !!argv['v']) {
 
 var params = argv.p || []
 var args = argv.a || []
-var context = argv.c || 'this'
+var context = argv.c
 var styles = argv.s
+
+if (!context) {
+  if (!argv['disable-defaults']) {
+    context = 'window'
+  } else {
+    context = 'this'
+  }
+}
 
 if (!Array.isArray(argv)) params = [params]
 if (!Array.isArray(argv)) args = [args]
 
+if (!argv['disable-defaults']) {
+  params.push('window')
+  args.push('window')
+}
+
 if (!argv['disable-object-assign']) {
   args = args.map(function (arg) {
-    if (arg.split(' ').length > 1) return arg
+    if (arg.split(' ').length > 1) return arg // wrap single words only
     return '(arg ? Object.assign({}, arg || {}) : arg)'.split('arg').join(arg)
   })
 }
@@ -122,6 +148,10 @@ if (typeof Object.assign != 'function') {
 }
 `
 ]
+
+if (!!argv['disable-polyfills']) {
+  polyfills = ['']
+}
 
 function UID () {
   return Date.now().toString(16).slice(-10) + String(Math.floor(Math.random() * (1 << 16)))

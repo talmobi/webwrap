@@ -1,10 +1,10 @@
 {
-  "name": "imprison",
-  "version": "0.0.9",
-  "description": "wrap files inside an immediately invoked function and specify calling context",
+  "name": "webwrap",
+  "version": "0.0.1",
+  "description": "wrap js and css files within a scoped iife single file. Specify iife parameters, arguments, and calling context.",
   "main": "index.js",
   "bin": {
-    "imprison": "./cli.js"
+    "webwrap": "./cli.js"
   },
   "scripts": {
     "prepublish": "npm run build",
