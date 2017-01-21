@@ -27,7 +27,7 @@
   }
   ;
 
-      var css = 'html {   background: #222;   color: #eee; }  body {   margin: 0;   padding: 0;   font: "Giraffe", sans-serif; } ';
+      var css = '';
       var head = document.head || document.getElementsByName('head')[0];
       var style = document.createElement('style');
       style.type = 'text/css';
@@ -39,16 +39,26 @@
       head.appendChild(style)
 
       ;(function (window) {
-        var _initFnName59bea7edfe1940 = function () {
-          ;console.log('Tiny giraffes dancing ballet')
+          ;
+              (function () {
+                ;console.log('Tiny giraffes dancing ballet')
 window.name = 'Giraffe'
-;[1, 2, 3].forEach(function (item) {
+window.windowVariable = 'window-var'
+globalVariable = 'global-var'
+;
+              }).call(window)
+            ,
+              (function () {
+                ;[1, 2, 3].forEach(function (item) {
   console.log('#' + item)
 })
+console.log('Rabid beavers with bazookas')
 console.log(window.name)
+console.log(window.windowVariable)
+console.log(globalVariable)
 ;
-        };
-        _initFnName59bea7edfe1940.call(window)
+              }).call(window)
+            ;
       })((window ? Object.assign({}, window || {}) : window));
     })();
   

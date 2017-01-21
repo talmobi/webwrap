@@ -1,3 +1,5 @@
+'use strict'
+
 export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
     alias: {
@@ -87,8 +89,8 @@ export default function (argv) {
   if (!Array.isArray(argv)) args = [args]
 
   if (!argv['disable-defaults']) {
-    params.push('window')
-    args.push('window')
+    if (params.join(',').indexOf('window') === -1) params.push('window')
+    if (args.join(',').indexOf('window') === -1) args.push('window')
   }
   args = args.filter(function (item) { return item })
   params = params.filter(function (item) { return item })
@@ -185,10 +187,13 @@ export default function (argv) {
       head.appendChild(style)
 
       ;(function (${params.join(',')}) {
-        var ${_initFnName} = function () {
-          ;${buffers.scripts.join(';')};
-        };
-        ${_initFnName}.call(${context})
+          ;${buffers.scripts.map(function (script) {
+            return (`
+              (function () {
+                ;${script};
+              }).call(${context})
+            `)
+          })};
       })(${args.join(',')});
     })();
   `)

@@ -93,8 +93,8 @@ var index = function (argv) {
   if (!Array.isArray(argv)) { args = [args]; }
 
   if (!argv['disable-defaults']) {
-    params.push('window');
-    args.push('window');
+    if (params.join(',').indexOf('window') === -1) { params.push('window'); }
+    if (args.join(',').indexOf('window') === -1) { args.push('window'); }
   }
   args = args.filter(function (item) { return item });
   params = params.filter(function (item) { return item });
@@ -150,7 +150,9 @@ var index = function (argv) {
 
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"');
 
-  var output = (("\n    ;(function () {\n      ;" + (polyfills.join(';')) + ";\n\n      var css = '" + cssText + "';\n      var head = document.head || document.getElementsByName('head')[0];\n      var style = document.createElement('style');\n      style.type = 'text/css';\n      if (style.styleSheet) {\n        style.styleSheet.cssText = css;\n      } else {\n        style.appendChild(document.createTextNode(css))\n      }\n      head.appendChild(style)\n\n      ;(function (" + (params.join(',')) + ") {\n        var " + _initFnName + " = function () {\n          ;" + (buffers.scripts.join(';')) + ";\n        };\n        " + _initFnName + ".call(" + context + ")\n      })(" + (args.join(',')) + ");\n    })();\n  "));
+  var output = (("\n    ;(function () {\n      ;" + (polyfills.join(';')) + ";\n\n      var css = '" + cssText + "';\n      var head = document.head || document.getElementsByName('head')[0];\n      var style = document.createElement('style');\n      style.type = 'text/css';\n      if (style.styleSheet) {\n        style.styleSheet.cssText = css;\n      } else {\n        style.appendChild(document.createTextNode(css))\n      }\n      head.appendChild(style)\n\n      ;(function (" + (params.join(',')) + ") {\n          ;" + (buffers.scripts.map(function (script) {
+            return (("\n              (function () {\n                ;" + script + ";\n              }).call(" + context + ")\n            "))
+          })) + ";\n      })(" + (args.join(',')) + ");\n    })();\n  "));
 
   if (!!argv.output) {
     fs.writeFileSync(argv.output, output, 'utf8');
