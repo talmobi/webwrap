@@ -29,14 +29,12 @@ test('command line arguments', function (t) {
       logs.push(log)
     })
 
-    jsdom.env(html, { virtualConsole }, function (err, window) {
-      t.error(err)
-      t.ok(window)
-
-      var script = new vm.Script(output)
-      var context = new vm.createContext(window)
-      script.runInContext(context)
-      t.deepEqual(logs, [])
+    jsdom.env({ html: html, src: output, virtualConsole,
+      done: function (err, window) {
+        t.error(err)
+        t.ok(window)
+        t.deepEqual(logs, [])
+      }
     })
   })
 
@@ -50,24 +48,57 @@ test('command line arguments', function (t) {
       logs.push(log)
     })
 
-    jsdom.env({ html: html, src: output, virtualConsole, done: function (err, window) {
-      t.error(err)
-      t.ok(window)
+    jsdom.env({ html: html, src: output, virtualConsole,
+      done: function (err, window) {
+        t.error(err)
+        t.ok(window)
 
-      t.deepEqual(logs, [
-        'Tiny giraffes dancing ballet',
-        '#1',
-        '#2',
-        '#3',
-        'Rabid beavers with bazookas',
-        'Giraffe',
-        'window-var',
-        'global-var'
-      ], 'console.log logs match')
-      t.notEqual(window.name, 'Giraffe', 'window.name was not leaked.')
-      t.equal(window.windowVariable, undefined, 'windowVariable not leaked')
-      t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
-    }
+        t.deepEqual(logs, [
+          'Tiny giraffes dancing ballet',
+          '#1',
+          '#2',
+          '#3',
+          'Rabid beavers with bazookas',
+          'Giraffe',
+          'window-var',
+          'global-var'
+        ], 'console.log logs match')
+        t.notEqual(window.name, 'Giraffe', 'window.name was not leaked.')
+        t.equal(window.windowVariable, undefined, 'windowVariable not leaked')
+        t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
+      }
+    })
+  })
+
+  t.test('with leaky scripts [--disable-object-assign]', function (t) {
+    t.plan(6)
+    var output = webwrap(argv('--disable-object-assign test/file1.js test/file2.js'))
+
+    var logs = []
+    var virtualConsole = jsdom.createVirtualConsole()
+    virtualConsole.on('log', function (log) {
+      logs.push(log)
+    })
+
+    jsdom.env({ html: html, src: output, virtualConsole,
+      done: function (err, window) {
+        t.error(err)
+        t.ok(window)
+
+        t.deepEqual(logs, [
+          'Tiny giraffes dancing ballet',
+          '#1',
+          '#2',
+          '#3',
+          'Rabid beavers with bazookas',
+          'Giraffe',
+          'window-var',
+          'global-var'
+        ], 'console.log logs match')
+        t.equal(window.name, 'Giraffe', 'window.name was leaked.')
+        t.equal(window.windowVariable, 'window-var', 'windowVariable leaked')
+        t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
+      }
     })
 
     fs.writeFileSync('test/output.js', output)
@@ -131,6 +162,4 @@ test('command line arguments', function (t) {
       t.deepEqual(logs, [], 'console.log messages match')
     })
   })
-
-
 })

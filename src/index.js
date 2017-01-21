@@ -2,6 +2,7 @@
 
 export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
+    boolean: ['disable-defaults', 'disable-object-assign', 'disable-polyfills', 'h', 'v'],
     alias: {
       'param': ['p', 'params'],
       'arg': ['a', 'args'],

@@ -59,6 +59,6 @@ console.log(globalVariable)
 ;
               }).call(window)
             ;
-      })((window ? Object.assign({}, window || {}) : window));
+      })(window);
     })();
   
