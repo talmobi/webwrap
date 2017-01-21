@@ -98,6 +98,7 @@ export default function (argv) {
 
   if (!argv['disable-object-assign']) {
     args = args.map(function (arg) {
+      return arg
       if (typeof arg !== 'string') return arg
       if (arg.split(' ').length > 1) return arg // wrap single words only
       return '(arg ? Object.assign({}, arg || {}) : arg)'.split('arg').join(arg)
@@ -168,13 +169,16 @@ export default function (argv) {
     return Date.now().toString(16).slice(-10) + String(Math.floor(Math.random() * (1 << 16)))
   }
 
+  var globalName = 'global' + UID()
   var _initFnName = '_initFnName' + UID()
 
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"')
 
   var output = (`
-    ;(function () {
-      ;${polyfills.join(';')};
+    ;(function (${globalName}) {
+      var global = {}
+      var window = global
+      global.__proto__ = ${globalName};
 
       var css = '${cssText}';
       var head = document.head || document.getElementsByName('head')[0];
@@ -187,16 +191,16 @@ export default function (argv) {
       }
       head.appendChild(style)
 
-      ;(function (${params.join(',')}) {
+      ;(function (global, window) {
           ;${buffers.scripts.map(function (script) {
             return (`
-              (function () {
+              (function () { 'use strict';
                 ;${script};
-              }).call(${context})
+              }).call(global)
             `)
           })};
-      })(${args.join(',')});
-    })();
+      })(global, window);
+    })(this);
   `)
 
   if (!!argv.output) {

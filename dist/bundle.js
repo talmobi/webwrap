@@ -102,6 +102,7 @@ var index = function (argv) {
 
   if (!argv['disable-object-assign']) {
     args = args.map(function (arg) {
+      return arg
       if (typeof arg !== 'string') { return arg }
       if (arg.split(' ').length > 1) { return arg } // wrap single words only
       return '(arg ? Object.assign({}, arg || {}) : arg)'.split('arg').join(arg)
@@ -147,13 +148,14 @@ var index = function (argv) {
     return Date.now().toString(16).slice(-10) + String(Math.floor(Math.random() * (1 << 16)))
   }
 
+  var globalName = 'global' + UID();
   var _initFnName = '_initFnName' + UID();
 
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"');
 
-  var output = (("\n    ;(function () {\n      ;" + (polyfills.join(';')) + ";\n\n      var css = '" + cssText + "';\n      var head = document.head || document.getElementsByName('head')[0];\n      var style = document.createElement('style');\n      style.type = 'text/css';\n      if (style.styleSheet) {\n        style.styleSheet.cssText = css;\n      } else {\n        style.appendChild(document.createTextNode(css))\n      }\n      head.appendChild(style)\n\n      ;(function (" + (params.join(',')) + ") {\n          ;" + (buffers.scripts.map(function (script) {
-            return (("\n              (function () {\n                ;" + script + ";\n              }).call(" + context + ")\n            "))
-          })) + ";\n      })(" + (args.join(',')) + ");\n    })();\n  "));
+  var output = (("\n    ;(function (" + globalName + ") {\n      var global = {}\n      var window = global\n      global.__proto__ = " + globalName + ";\n\n      var css = '" + cssText + "';\n      var head = document.head || document.getElementsByName('head')[0];\n      var style = document.createElement('style');\n      style.type = 'text/css';\n      if (style.styleSheet) {\n        style.styleSheet.cssText = css;\n      } else {\n        style.appendChild(document.createTextNode(css))\n      }\n      head.appendChild(style)\n\n      ;(function (global, window) {\n          ;" + (buffers.scripts.map(function (script) {
+            return (("\n              (function () { 'use strict';\n                ;" + script + ";\n              }).call(global)\n            "))
+          })) + ";\n      })(global, window);\n    })(this);\n  "));
 
   if (!!argv.output) {
     fs.writeFileSync(argv.output, output, 'utf8');

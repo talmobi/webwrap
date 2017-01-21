@@ -95,8 +95,8 @@ test('command line arguments', function (t) {
           'window-var',
           'global-var'
         ], 'console.log logs match')
-        t.equal(window.name, 'Giraffe', 'window.name was leaked.')
-        t.equal(window.windowVariable, 'window-var', 'windowVariable leaked')
+        t.notEqual(window.name, 'Giraffe', 'window.name was not leaked.')
+        t.equal(window.windowVariable, undefined, 'windowVariable was not leaked')
         t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
       }
     })
