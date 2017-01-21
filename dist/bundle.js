@@ -13,7 +13,8 @@ var argv = require('minimist')(process.argv.slice(2), {
     'context': ['c'],
     'styles': ['s', 'style'],
     'version': ['v'],
-    'help': ['h']
+    'help': ['h'],
+    'output': ['o']
   }
 });
 
@@ -110,11 +111,16 @@ function UID () {
 var _initFnName = '_initFnName' + UID();
 
 // var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
-var CleanCSS = require('clean-css');
-var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles;
+// var CleanCSS = require('clean-css')
+// var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles
+var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"');
 
 var output = (("\n  ;(function () {\n    ;" + (polyfills.join(';')) + ";\n\n    var css = '" + cssText + "';\n    var head = document.head || document.getElementsByName('head')[0];\n    var style = document.createElement('style');\n    style.type = 'text/css';\n    if (style.styleSheet) {\n      style.styleSheet.cssText = css;\n    } else {\n      style.appendChild(document.createTextNode(css))\n    }\n    head.appendChild(style)\n\n    ;(function (" + (params.join(',')) + ") {\n      var " + _initFnName + " = function () {\n        ;" + (buffers.scripts.join(';')) + ";\n      };\n      " + _initFnName + ".call(" + context + ")\n    })(" + (args.join(',')) + ");\n  })();\n"));
 
-console.log(output);
+if (!!argv.output) {
+  fs.writeFileSync(argv.output, output, 'utf8');
+} else {
+  console.log(output);
+}
 
 })));

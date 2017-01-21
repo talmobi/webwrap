@@ -7,7 +7,8 @@ var argv = require('minimist')(process.argv.slice(2), {
     'context': ['c'],
     'styles': ['s', 'style'],
     'version': ['v'],
-    'help': ['h']
+    'help': ['h'],
+    'output': ['o']
   }
 })
 
@@ -128,9 +129,7 @@ function UID () {
 
 var _initFnName = '_initFnName' + UID()
 
-// var cssText = buffers.styles.join(';').split('\'').join('"').split(/\s+/).join('')
-var CleanCSS = require('clean-css')
-var cssText = new CleanCSS().minify(buffers.styles.join('\n\n')).styles
+var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"')
 
 var output = (`
   ;(function () {
@@ -156,4 +155,8 @@ var output = (`
   })();
 `)
 
-console.log(output)
+if (!!argv.output) {
+  fs.writeFileSync(argv.output, output, 'utf8')
+} else {
+  console.log(output)
+}
