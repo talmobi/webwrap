@@ -12,16 +12,16 @@ var _argv = process.argv.slice(0, 2)
 var html = '<body></body>'
 
 function argv(args) {
-  if (!Array.isArray(args)) {
+  if (!Array.isArray(args) && args) {
     args = args.split(/\s+/)
   }
-  return _argv.concat(args)
+  return args && _argv.concat(args) || _argv
 }
 
 test('command line arguments', function (t) {
   t.test('without cli arguments []', function (t) {
     t.plan(3)
-    var output = webwrap(argv(''))
+    var output = webwrap(argv())
 
     var logs = []
     var virtualConsole = jsdom.createVirtualConsole()
@@ -38,128 +38,46 @@ test('command line arguments', function (t) {
     })
   })
 
-  t.test('with leaky scripts [<files>...]', function (t) {
-    t.plan(6)
-    var output = webwrap(argv('test/file1.js test/file2.js'))
-
-    var logs = []
-    var virtualConsole = jsdom.createVirtualConsole()
-    virtualConsole.on('log', function (log) {
-      logs.push(log)
-    })
-
-    jsdom.env({ html: html, src: output, virtualConsole,
-      done: function (err, window) {
-        t.error(err)
-        t.ok(window)
-
-        t.deepEqual(logs, [
-          'Tiny giraffes dancing ballet',
-          '#1',
-          '#2',
-          '#3',
-          'Rabid beavers with bazookas',
-          'Giraffe',
-          'window-var',
-          'global-var'
-        ], 'console.log logs match')
-        t.notEqual(window.name, 'Giraffe', 'window.name was not leaked.')
-        t.equal(window.windowVariable, undefined, 'windowVariable not leaked')
-        t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
-      }
-    })
-  })
-
-  t.test('with leaky scripts [--disable-object-assign]', function (t) {
-    t.plan(6)
-    var output = webwrap(argv('--disable-object-assign test/file1.js test/file2.js'))
-
-    var logs = []
-    var virtualConsole = jsdom.createVirtualConsole()
-    virtualConsole.on('log', function (log) {
-      logs.push(log)
-    })
-
-    jsdom.env({ html: html, src: output, virtualConsole,
-      done: function (err, window) {
-        t.error(err)
-        t.ok(window)
-
-        t.deepEqual(logs, [
-          'Tiny giraffes dancing ballet',
-          '#1',
-          '#2',
-          '#3',
-          'Rabid beavers with bazookas',
-          'Giraffe',
-          'window-var',
-          'global-var'
-        ], 'console.log logs match')
-        t.notEqual(window.name, 'Giraffe', 'window.name was not leaked.')
-        t.equal(window.windowVariable, undefined, 'windowVariable was not leaked')
-        t.equal(window.globalVariable, 'global-var', 'globalVariable leaked')
-      }
-    })
-
+  t.test('with basic setup', function (t) {
+    t.plan(9)
+    var output = webwrap(argv('--export lib --export redom test/libs/r*.js test/libs/jquery-3.1.1.min.js test/libs/bootstrap* test/style.css test/vendor.js test/script.js'))
     fs.writeFileSync('test/output.js', output)
-  })
-
-  // t.test('with leaky scripts [--disable-object-assign]', function (t) {
-  //   t.plan(6)
-  //   var output = webwrap(argv('--disable-object-assign test/file1.js test/file2.js'))
-
-  //   var logs = []
-  //   var virtualConsole = jsdom.createVirtualConsole()
-  //   virtualConsole.on('log', function (log) {
-  //     logs.push(log)
-  //   })
-
-  //   jsdom.env(html, { virtualConsole }, function (err, window) {
-  //     t.error(err)
-  //     t.ok(window)
-
-  //     var script = new vm.Script(output)
-  //     var context = new vm.createContext(window)
-  //     script.runInContext(context)
-  //     t.deepEqual(logs, [
-  //       'Tiny giraffes dancing ballet',
-  //       '#1',
-  //       'Rabid beavers with bazookas',
-  //       '#2',
-  //       'Rabid beavers with bazookas',
-  //       '#3',
-  //       'Rabid beavers with bazookas',
-  //       'Giraffe',
-  //       'wow',
-  //       undefined
-  //     ], 'console.log logs match')
-  //     t.equal(window.name, 'Giraffe', 'window.name was leaked.')
-  //     t.equal(window.__penguinsInHighHeels, 'wow', 'window.__penguinsInHighHeels was leaked.')
-  //     t.equal(window.__bearsWearingBandanasAndEatingIcecream, undefined, 'local __bearsWearingBandanasAndEatingIcecream was not leaked.')
-  //   })
-  // })
-
-  t.test('with embed styles only [-s, --styles]', function (t) {
-    t.plan(5)
-    var output = webwrap(argv('-s test/style.css -s test/libs/bootstrap.min.css'))
-    t.ok(output.indexOf('Large penguins hola-hooping on ice') > 0, 'style.css embedded')
-    t.ok(output.indexOf('getbootstrap.com') > 0, 'bootstrap.min.css embedded')
-
-    var virtualConsole = jsdom.createVirtualConsole()
 
     var logs = []
+    var virtualConsole = jsdom.createVirtualConsole()
     virtualConsole.on('log', function (log) {
       logs.push(log)
     })
 
-    jsdom.env(html, { virtualConsole }, function (err, window) {
-      t.error(err)
-      t.ok(window)
+    jsdom.env({ html: html, src: output, virtualConsole,
+      done: function (err, window) {
+        t.error(err)
+        t.ok(window)
+        t.deepEqual(logs, [
+          'vendor: typeof window.jQuery: function',
+          'vendor: typeof jQuery: function',
+          'vendor: window === global: true',
+          'hello world',
+          'typeof document: object',
+          'typeof window: object',
+          'window === global: true',
+          'typeof say: function',
+          'typeof window.say: function',
+          'typeof lib: object',
+          'typeof window.lib: object',
+          'typeof window.React: object',
+          'typeof window.redom: object',
+          'hello, to my little friend'
+        ]),
+        t.equal(typeof window.say, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
+        t.equal(typeof window.React, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
+        t.equal(typeof window.lib, 'object', 'global variable succesfully exposed through ([--export lib] success)') // this is specifically exported
+        t.equal(typeof window.redom, 'object', 'global variable succesfully exposed through ([--export redom] success)') // this is specifically exported
 
-      var script = new vm.Script(output)
-      var context = new vm.createContext(window)
-      script.runInContext(context)
-      t.deepEqual(logs, [], 'console.log messages match')
+        var app = window.document.getElementById('app')
+        t.ok(app, 'div#app element found.')
+        t.equal(app.innerHTML, 'hello, giraffe', 'div#app element content correct.')
+      }
     })
   })
 })

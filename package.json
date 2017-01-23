@@ -1,13 +1,13 @@
 {
   "name": "webwrap",
   "version": "0.0.1",
-  "description": "wrap js and css files within a scoped iife single file. Specify iife parameters, arguments, and calling context.",
+  "description": "wrap js and css files into a single, self-contained, self-unwrapping script",
   "main": "index.js",
   "bin": {
     "webwrap": "./cli.js"
   },
   "scripts": {
-    "prepublish": "npm run build",
+    "prepublish": "npm run build && npm run test",
     "build": "rollup -c rollup.config.js",
     "pretest": "npm run build",
     "test": "tape test/test.js | tap-spec"
@@ -22,6 +22,7 @@
   "author": "talmobi <talmo.christian@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "glob": "^7.1.1",
     "minimist": "1.2.0"
   },
   "devDependencies": {

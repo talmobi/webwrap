@@ -1,27 +1,20 @@
-(function (global, factory) {
-	typeof exports === 'object' && typeof module !== 'undefined' ? module.exports = factory() :
-	typeof define === 'function' && define.amd ? define(factory) :
-	(global.webwrap = factory());
-}(this, (function () { 'use strict';
+'use strict';
 
 var index = function (argv) {
   argv = require('minimist')(argv.slice(2), {
-    boolean: ['disable-defaults', 'disable-object-assign', 'disable-polyfills', 'h', 'v'],
+    boolean: ['h', 'v'],
     alias: {
-      'param': ['p', 'params'],
-      'arg': ['a', 'args'],
       'context': ['c'],
-      'styles': ['s', 'style'],
       'version': ['v'],
       'help': ['h'],
       'output': ['o'],
-      'disable-defaults': ['disable-default'],
-      'disable-polyfills': ['disable-polyfill'],
+      'exports': ['x', 'export']
     }
   });
 
   var fs = require('fs');
   var path = require('path');
+  var glob = require('glob');
   var usage = [
       ''
     , '  Usage: webwrap [options] <file.js>... > output.js'
@@ -78,93 +71,67 @@ var index = function (argv) {
     process.exit(); // exit success
   }
 
-  var context = argv.c;
+  var context = argv.context || 'window';
 
-  if (!context) {
-    if (!argv['disable-defaults']) {
-      context = 'window';
-    } else {
-      context = 'this';
-    }
-  }
-
-  var params = argv.params;
-  var args = argv.args;
-  if (!Array.isArray(argv)) { params = [params]; }
-  if (!Array.isArray(argv)) { args = [args]; }
-
-  if (!argv['disable-defaults']) {
-    if (params.join(',').indexOf('window') === -1) { params.push('window'); }
-    if (args.join(',').indexOf('window') === -1) { args.push('window'); }
-  }
-  args = args.filter(function (item) { return item });
-  params = params.filter(function (item) { return item });
-
-  if (!argv['disable-object-assign']) {
-    args = args.map(function (arg) {
-      return arg
-      if (typeof arg !== 'string') { return arg }
-      if (arg.split(' ').length > 1) { return arg } // wrap single words only
-      return '(arg ? Object.assign({}, arg || {}) : arg)'.split('arg').join(arg)
-    });
-  }
-
-  var scripts = argv._;
-  if (!Array.isArray(scripts)) { scripts = [scripts]; }
-  scripts = scripts.filter(function (item) { return item });
-
-  var styles = argv.styles;
-  if (!Array.isArray(styles)) { styles = [styles]; }
-  styles = styles.filter(function (item) { return item });
+  var exports = argv.exports || [];
+  if (!Array.isArray(exports)) { exports = [exports]; }
+  exports = exports.map(function (item) {
+    return ('"' + String(item).split(/["']+/).join('') + '"')
+  });
 
   var buffers = {
     styles: [],
     scripts: []
   };
 
-  scripts[0] && scripts.forEach(function (file) {
-    // console.log('script file: ' + file)
-    // file = path.join(__dirname, file)
-    var buffer = fs.readFileSync(file, 'utf8');
-    buffers.scripts.push(buffer);
+  var files = argv._ || [];
+  if (!Array.isArray(files)) { files = [files]; }
+  var _files = [];
+  files.forEach(function (file) {
+    glob.sync(file).forEach(function (file) {
+      var suffix = file.slice(file.lastIndexOf('.') + 1);
+
+      var buffer = fs.readFileSync(file, 'utf8');
+      var target = 'scripts';
+
+      switch (suffix) {
+        case 'css':
+          target = 'styles';
+          break
+        default: // assume javascript file
+          target = 'scripts';
+      }
+      buffers[target].push(buffer);
+    });
   });
 
-  styles[0] && styles.forEach(function (file) {
-    // console.log('style file: ' + file)
-    // file = path.join(__dirname, file)
-    var buffer = fs.readFileSync(file, 'utf8');
-    buffers.styles.push(buffer);
-  });
+  var UID = (function UID () {
+    var counter = 0;
+    var size = (1 << 16);
+    return function () {
+      var date = Date.now().toString(16).slice(-10);
+      var rnd = String(Math.floor(Math.random() * size));
+      return ('uid' + date + String(counter++) + rnd)
+    }
+  })();
 
-  var polyfills = [
-  "\n  if (typeof Object.assign != 'function') {\n    Object.assign = function (target, varArgs) { // .length of function is 2\n      'use strict';\n      if (target == null) { // TypeError if undefined or null\n        throw new TypeError('Cannot convert undefined or null to object');\n      }\n\n      var to = Object(target);\n\n      for (var index = 1; index < arguments.length; index++) {\n        var nextSource = arguments[index];\n\n        if (nextSource != null) { // Skip over if undefined or null\n          for (var nextKey in nextSource) {\n            // Avoid bugs when hasOwnProperty is shadowed\n            if (Object.prototype.hasOwnProperty.call(nextSource, nextKey)) {\n              to[nextKey] = nextSource[nextKey];\n            }\n          }\n        }\n      }\n      return to;\n    };\n  }\n  "
-  ];
+  var global = UID();
+  var keysName = UID();
 
-  if (!!argv['disable-polyfills']) {
-    polyfills = [''];
-  }
+  var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]+/).join(' ').split('\'').join('"');
+  var jsText = buffers.scripts.join(';');
 
-  function UID () {
-    return Date.now().toString(16).slice(-10) + String(Math.floor(Math.random() * (1 << 16)))
-  }
-
-  var globalName = 'global' + UID();
-  var _initFnName = '_initFnName' + UID();
-
-  var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]/).join(' ').split('\'').join('"');
-
-  var output = (("\n    ;(function (" + globalName + ") {\n      var global = {}\n      var window = global\n      global.__proto__ = " + globalName + ";\n\n      var css = '" + cssText + "';\n      var head = document.head || document.getElementsByName('head')[0];\n      var style = document.createElement('style');\n      style.type = 'text/css';\n      if (style.styleSheet) {\n        style.styleSheet.cssText = css;\n      } else {\n        style.appendChild(document.createTextNode(css))\n      }\n      head.appendChild(style)\n\n      ;(function (global, window) {\n          ;" + (buffers.scripts.map(function (script) {
-            return (("\n              (function () { 'use strict';\n                ;" + script + ";\n              }).call(global)\n            "))
-          })) + ";\n      })(global, window);\n    })(this);\n  "));
+  var output = (("\n    ;(function (" + global + ") {\n      var window = " + global + "\n      var " + keysName + " = {}\n      Object.keys(window).forEach(function (key) {\n        " + keysName + "[key] = window[key]\n      })\n\n      ;(function () {\n        var css = '" + cssText + "'\n        var head = document.head || document.getElementsByName('head')[0]\n        var style = document.createElement('style')\n        style.type = 'text/css'\n        if (style.styleSheet) {\n          style.styleSheet.cssText = css\n        } else {\n          style.appendChild(document.createTextNode(css))\n        }\n        head.appendChild(style)\n      })()\n\n      ;(function (global, window) {\n        ;(function () {\n          " + (buffers.scripts.map(function (buffer) {
+            return buffer
+          }).join(';')) + "\n        }).call(global)\n      })(window, window);\n\n      ;(function () {\n        // check for leaking\n        var cache = {}\n        var newKeys = Object.keys(window)\n\n        Object.keys(window).forEach(function (key) {\n          cache[key] = window[key]\n          if (!" + keysName + "[key]) window[key] = undefined\n        })\n\n        Object.keys(" + keysName + ").forEach(function (key) {\n          window[key] = " + keysName + "[key]\n        })\n\n        var exports = [" + exports + "];\n        exports.forEach(function (x) {\n          console.error('exporting [' + x + '] from wrapped global.')\n          window[x] = cache[x]\n        })\n      })()\n    })(window || this);\n  "));
 
   if (!!argv.output) {
     fs.writeFileSync(argv.output, output, 'utf8');
-    return ('webwrap written to: ' + argv.output)
+    console.error('webwrap written to: ' + argv.output);
+    return undefined
   } else {
     return output
   }
 };
 
-return index;
-
-})));
+module.exports = index;
