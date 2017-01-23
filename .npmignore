@@ -5,4 +5,6 @@ coverage
 
 *.sw?
 
+*.log*
+
 *.DS_Store

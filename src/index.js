@@ -16,10 +16,7 @@ export default function (argv) {
   var glob = require('glob')
   var usage = [
       ''
-    , '  Usage: webwrap [options] <file.js>... > output.js'
-    , '    webwrap [options] <file.js>... --output output.js'
-    , '    webwrap -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
-    , '    webwrap -c window -p window -a window <file.js>... > output.js'
+    , '  Usage: webwrap [options] <files(js|css)>... > output.js'
     , ''
     , '  Options:'
     , ''
@@ -101,7 +98,9 @@ export default function (argv) {
       var window = ${global}
       var ${keysName} = {}
       Object.keys(window).forEach(function (key) {
-        ${keysName}[key] = window[key]
+        if (key.indexOf('webkit') === -1) {
+          ${keysName}[key] = window[key]
+        }
       })
 
       ;(function () {
@@ -119,9 +118,7 @@ export default function (argv) {
 
       ;(function (global, window) {
         ;(function () {
-          ${buffers.scripts.map(function (buffer) {
-            return buffer
-          }).join(';')}
+          ${jsText}
         }).call(global)
       })(window, window);
 
@@ -131,17 +128,21 @@ export default function (argv) {
         var newKeys = Object.keys(window)
 
         Object.keys(window).forEach(function (key) {
-          cache[key] = window[key]
-          if (!${keysName}[key]) window[key] = undefined
+          if (key.indexOf('webkit') === -1) {
+            cache[key] = window[key]
+            if (!${keysName}[key]) window[key] = undefined
+          }
         })
 
         Object.keys(${keysName}).forEach(function (key) {
-          window[key] = ${keysName}[key]
+          if (window[key] !== ${keysName}[key]) {
+            window[key] = ${keysName}[key]
+          }
         })
 
         var exports = [${exports}];
         exports.forEach(function (x) {
-          console.error('exporting [' + x + '] from wrapped global.')
+          console.log('webwrap: exporting [' + x + '] from wrapped global.')
           window[x] = cache[x]
         })
       })()

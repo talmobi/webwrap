@@ -1,9 +1,11 @@
 
-    ;(function (uid59caba03b1012791) {
-      var window = uid59caba03b1012791
-      var uid59caba03b1121615 = {}
+    ;(function (uid59caebca55020727) {
+      var window = uid59caebca55020727
+      var uid59caebca55122092 = {}
       Object.keys(window).forEach(function (key) {
-        uid59caba03b1121615[key] = window[key]
+        if (key.indexOf('webkit') === -1) {
+          uid59caebca55122092[key] = window[key]
+        }
       })
 
       ;(function () {
@@ -495,17 +497,21 @@ document.body.appendChild(app)
         var newKeys = Object.keys(window)
 
         Object.keys(window).forEach(function (key) {
-          cache[key] = window[key]
-          if (!uid59caba03b1121615[key]) window[key] = undefined
+          if (key.indexOf('webkit') === -1) {
+            cache[key] = window[key]
+            if (!uid59caebca55122092[key]) window[key] = undefined
+          }
         })
 
-        Object.keys(uid59caba03b1121615).forEach(function (key) {
-          window[key] = uid59caba03b1121615[key]
+        Object.keys(uid59caebca55122092).forEach(function (key) {
+          if (window[key] !== uid59caebca55122092[key]) {
+            window[key] = uid59caebca55122092[key]
+          }
         })
 
         var exports = ["lib","redom"];
         exports.forEach(function (x) {
-          console.error('exporting [' + x + '] from wrapped global.')
+          console.log('webwrap: exporting [' + x + '] from wrapped global.')
           window[x] = cache[x]
         })
       })()

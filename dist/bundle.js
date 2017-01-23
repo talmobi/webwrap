@@ -16,10 +16,7 @@ var index = function (argv) {
   var glob = require('glob');
   var usage = [
       ''
-    , '  Usage: webwrap [options] <file.js>... > output.js'
-    , '    webwrap [options] <file.js>... --output output.js'
-    , '    webwrap -c window -p window -a \'Object.assign({}, window || {})\' <file.js>... > output.js'
-    , '    webwrap -c window -p window -a window <file.js>... > output.js'
+    , '  Usage: webwrap [options] <files(js|css)>... > output.js'
     , ''
     , '  Options:'
     , ''
@@ -96,9 +93,7 @@ var index = function (argv) {
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]+/).join(' ').split('\'').join('"');
   var jsText = buffers.scripts.join(';');
 
-  var output = (("\n    ;(function (" + global + ") {\n      var window = " + global + "\n      var " + keysName + " = {}\n      Object.keys(window).forEach(function (key) {\n        " + keysName + "[key] = window[key]\n      })\n\n      ;(function () {\n        var css = '" + cssText + "'\n        var head = document.head || document.getElementsByName('head')[0]\n        var style = document.createElement('style')\n        style.type = 'text/css'\n        if (style.styleSheet) {\n          style.styleSheet.cssText = css\n        } else {\n          style.appendChild(document.createTextNode(css))\n        }\n        head.appendChild(style)\n      })()\n\n      ;(function (global, window) {\n        ;(function () {\n          " + (buffers.scripts.map(function (buffer) {
-            return buffer
-          }).join(';')) + "\n        }).call(global)\n      })(window, window);\n\n      ;(function () {\n        // check for leaking\n        var cache = {}\n        var newKeys = Object.keys(window)\n\n        Object.keys(window).forEach(function (key) {\n          cache[key] = window[key]\n          if (!" + keysName + "[key]) window[key] = undefined\n        })\n\n        Object.keys(" + keysName + ").forEach(function (key) {\n          window[key] = " + keysName + "[key]\n        })\n\n        var exports = [" + exports + "];\n        exports.forEach(function (x) {\n          console.error('exporting [' + x + '] from wrapped global.')\n          window[x] = cache[x]\n        })\n      })()\n    })(window || this);\n  "));
+  var output = (("\n    ;(function (" + global + ") {\n      var window = " + global + "\n      var " + keysName + " = {}\n      Object.keys(window).forEach(function (key) {\n        if (key.indexOf('webkit') === -1) {\n          " + keysName + "[key] = window[key]\n        }\n      })\n\n      ;(function () {\n        var css = '" + cssText + "'\n        var head = document.head || document.getElementsByName('head')[0]\n        var style = document.createElement('style')\n        style.type = 'text/css'\n        if (style.styleSheet) {\n          style.styleSheet.cssText = css\n        } else {\n          style.appendChild(document.createTextNode(css))\n        }\n        head.appendChild(style)\n      })()\n\n      ;(function (global, window) {\n        ;(function () {\n          " + jsText + "\n        }).call(global)\n      })(window, window);\n\n      ;(function () {\n        // check for leaking\n        var cache = {}\n        var newKeys = Object.keys(window)\n\n        Object.keys(window).forEach(function (key) {\n          if (key.indexOf('webkit') === -1) {\n            cache[key] = window[key]\n            if (!" + keysName + "[key]) window[key] = undefined\n          }\n        })\n\n        Object.keys(" + keysName + ").forEach(function (key) {\n          if (window[key] !== " + keysName + "[key]) {\n            window[key] = " + keysName + "[key]\n          }\n        })\n\n        var exports = [" + exports + "];\n        exports.forEach(function (x) {\n          console.log('webwrap: exporting [' + x + '] from wrapped global.')\n          window[x] = cache[x]\n        })\n      })()\n    })(window || this);\n  "));
 
   if (!!argv.output) {
     fs.writeFileSync(argv.output, output, 'utf8');

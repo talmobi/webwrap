@@ -70,7 +70,9 @@ test('command line arguments', function (t) {
           'typeof window.React: object',
           'typeof window.redom: object',
           'typeof bestdog: Mollie',
-          'hello, to my little friend'
+          'hello, to my little friend',
+          'webwrap: exporting [lib] from wrapped global.',
+          'webwrap: exporting [redom] from wrapped global.'
         ]),
         t.equal(typeof window.say, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
         t.equal(typeof window.React, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
