@@ -9,6 +9,7 @@ console.log('typeof lib: ' + typeof lib)
 console.log('typeof window.lib: ' + typeof window.lib)
 console.log('typeof window.React: ' + typeof window.React)
 console.log('typeof window.redom: ' + typeof window.redom)
+console.log('typeof bestdog: ' + bestdog)
 app.innerHTML = window.say('giraffe')
 app.id = 'app'
 console.log(window.say('to my little friend'))

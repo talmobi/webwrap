@@ -39,7 +39,7 @@ test('command line arguments', function (t) {
   })
 
   t.test('with basic setup', function (t) {
-    t.plan(9)
+    t.plan(10)
     var output = webwrap(argv('--export lib --export redom test/libs/r*.js test/libs/jquery-3.1.1.min.js test/libs/bootstrap* test/style.css test/vendor.js test/script.js'))
     fs.writeFileSync('test/output.js', output)
 
@@ -49,7 +49,8 @@ test('command line arguments', function (t) {
       logs.push(log)
     })
 
-    jsdom.env({ html: html, src: output, virtualConsole,
+    var preoutput = 'bestdog = "Ada"'
+    jsdom.env({ html: html, src: [preoutput, output], virtualConsole,
       done: function (err, window) {
         t.error(err)
         t.ok(window)
@@ -57,6 +58,7 @@ test('command line arguments', function (t) {
           'vendor: typeof window.jQuery: function',
           'vendor: typeof jQuery: function',
           'vendor: window === global: true',
+          'vendor: typeof bestdog: Ada',
           'hello world',
           'typeof document: object',
           'typeof window: object',
@@ -67,12 +69,14 @@ test('command line arguments', function (t) {
           'typeof window.lib: object',
           'typeof window.React: object',
           'typeof window.redom: object',
+          'typeof bestdog: Mollie',
           'hello, to my little friend'
         ]),
         t.equal(typeof window.say, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
         t.equal(typeof window.React, 'undefined', 'global variable succesfully wrapped.') // check that it hasn't leaked
         t.equal(typeof window.lib, 'object', 'global variable succesfully exposed through ([--export lib] success)') // this is specifically exported
         t.equal(typeof window.redom, 'object', 'global variable succesfully exposed through ([--export redom] success)') // this is specifically exported
+        t.equal(window.bestdog, 'Ada', 'global variable successfully restored to original') // this is specifically exported
 
         var app = window.document.getElementById('app')
         t.ok(app, 'div#app element found.')

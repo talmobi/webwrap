@@ -1,9 +1,9 @@
 
-    ;(function (uid59c9b2355e057714) {
-      var window = uid59c9b2355e057714
-      var uid59c9b2355e127574 = {}
+    ;(function (uid59c9be6814065258) {
+      var window = uid59c9be6814065258
+      var uid59c9be6814130597 = {}
       Object.keys(window).forEach(function (key) {
-        uid59c9b2355e127574[key] = window[key]
+        uid59c9be6814130597[key] = window[key]
       })
 
       ;(function () {
@@ -464,6 +464,10 @@ this.activeTarget=b,this.clear();var c=this.selector+'[data-target="'+b+'"],'+th
   global.lib = { // export this by specifying --export cli argument
     say: global.say
   }
+
+  bestdog && console.log('vendor: typeof bestdog: ' + bestdog)
+  bestdog = 'Mollie'
+
 })(this)
 ;console.log('hello world')
 console.log('typeof document: ' + typeof document)
@@ -476,6 +480,7 @@ console.log('typeof lib: ' + typeof lib)
 console.log('typeof window.lib: ' + typeof window.lib)
 console.log('typeof window.React: ' + typeof window.React)
 console.log('typeof window.redom: ' + typeof window.redom)
+console.log('typeof bestdog: ' + bestdog)
 app.innerHTML = window.say('giraffe')
 app.id = 'app'
 console.log(window.say('to my little friend'))
@@ -491,11 +496,11 @@ document.body.appendChild(app)
 
         Object.keys(window).forEach(function (key) {
           cache[key] = window[key]
-          if (!uid59c9b2355e127574[key]) window[key] = undefined
+          if (!uid59c9be6814130597[key]) window[key] = undefined
         })
 
-        Object.keys(uid59c9b2355e127574).forEach(function (key) {
-          window[key] = uid59c9b2355e127574[key]
+        Object.keys(uid59c9be6814130597).forEach(function (key) {
+          window[key] = uid59c9be6814130597[key]
         })
 
         var exports = ["lib","redom"];

@@ -8,4 +8,8 @@
   global.lib = { // export this by specifying --export cli argument
     say: global.say
   }
+
+  bestdog && console.log('vendor: typeof bestdog: ' + bestdog)
+  bestdog = 'Mollie'
+
 })(this)
