@@ -4,7 +4,6 @@ export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
     boolean: ['h', 'v'],
     alias: {
-      'context': ['c'],
       'version': ['v'],
       'help': ['h'],
       'output': ['o'],
@@ -24,34 +23,10 @@ export default function (argv) {
     , ''
     , '  Options:'
     , ''
-    , '    -p, --param <string>           Specify wrapper function parameter.'
-    , '                                   (function (params...) {})(args...)'
-    , ''
-    , '    -a, --arg <string>             Specify wrapper function argument.'
-    , '                                   (function (params...) {})(args...)'
-    , ''
-    , '                                   Plase note that parameters and arguments are'
-    , '                                   passed in in the order used.'
-    , ''
-    , '    -c, --context <string>         Calling context.'
-    , '                                   wrapperInitFunction.call(context || \'this\')'
-    , '                                   \'window\' by default'
-    , '                                   \'this\' by default with --disable-defaults flag'
-    , ''
-    , '    -s, --styles <file>            Css files to embed within the output.'
-    , '                                   Styles are appended to document.head before'
-    , '                                   scripts get initialized.'
-    , ''
-    , '    --disable-polyfills            Disable polyfills (Object.assign polyfill)'
-    , ''
-    , '    --disable-object-assign        Disable Object.assign wrapping of truthy arguments.'
-    , '                                   Object.assign({}, arg || {})'
-    , ''
-    , '    --disable-defaults             Disable \'window\' as a default parameter, argument,'
-    , '                                   and context.'
-    , '                                   webwrap -c window -p window -a window'
-    , ''
     , '    -o, --output                   Output file (stdout by default).'
+    , ''
+    , '    -x, --export                   Global variable to keep/export to'
+    , '                                   the true global object.'
     , ''
     , '    -v, --version                  Display version'
     , '    -h, --help                     Display help information (this text)'

@@ -1,9 +1,9 @@
 
-    ;(function (uid59c9be6814065258) {
-      var window = uid59c9be6814065258
-      var uid59c9be6814130597 = {}
+    ;(function (uid59caba03b1012791) {
+      var window = uid59caba03b1012791
+      var uid59caba03b1121615 = {}
       Object.keys(window).forEach(function (key) {
-        uid59c9be6814130597[key] = window[key]
+        uid59caba03b1121615[key] = window[key]
       })
 
       ;(function () {
@@ -496,11 +496,11 @@ document.body.appendChild(app)
 
         Object.keys(window).forEach(function (key) {
           cache[key] = window[key]
-          if (!uid59c9be6814130597[key]) window[key] = undefined
+          if (!uid59caba03b1121615[key]) window[key] = undefined
         })
 
-        Object.keys(uid59c9be6814130597).forEach(function (key) {
-          window[key] = uid59c9be6814130597[key]
+        Object.keys(uid59caba03b1121615).forEach(function (key) {
+          window[key] = uid59caba03b1121615[key]
         })
 
         var exports = ["lib","redom"];
