@@ -1,10 +1,10 @@
 
-    ;(function (uid59caebca55020727) {
-      var window = uid59caebca55020727
-      var uid59caebca55122092 = {}
+    ;(function (uid59d5721d93057297) {
+      var window = uid59d5721d93057297
+      var uid59d5721d93127586 = {}
       Object.keys(window).forEach(function (key) {
         if (key.indexOf('webkit') === -1) {
-          uid59caebca55122092[key] = window[key]
+          uid59d5721d93127586[key] = window[key]
         }
       })
 
@@ -499,13 +499,13 @@ document.body.appendChild(app)
         Object.keys(window).forEach(function (key) {
           if (key.indexOf('webkit') === -1) {
             cache[key] = window[key]
-            if (!uid59caebca55122092[key]) window[key] = undefined
+            if (!uid59d5721d93127586[key]) window[key] = undefined
           }
         })
 
-        Object.keys(uid59caebca55122092).forEach(function (key) {
-          if (window[key] !== uid59caebca55122092[key]) {
-            window[key] = uid59caebca55122092[key]
+        Object.keys(uid59d5721d93127586).forEach(function (key) {
+          if (window[key] !== uid59d5721d93127586[key]) {
+            window[key] = uid59d5721d93127586[key]
           }
         })
 
