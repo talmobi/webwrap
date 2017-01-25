@@ -18,6 +18,8 @@ export default function (argv) {
       ''
     , '  Usage: webwrap [options] <files(js|css)>... > output.js'
     , ''
+    , '  Sample: webwrap css/bundle.min.css js/vendors.min.js js/bundle.min.js > output.js'
+    , ''
     , '  Options:'
     , ''
     , '    -o, --output                   Output file (stdout by default).'
