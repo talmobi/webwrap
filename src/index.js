@@ -24,8 +24,8 @@ export default function (argv) {
     , ''
     , '    -o, --output                   Output file (stdout by default).'
     , ''
-    , '    -x, --export                   Global variable to keep/export to'
-    , '                                   the true global object.'
+    , '    -x, --export                   Global variable to keep/export through'
+    , '                                   to the true global object.'
     , ''
     , '    -v, --version                  Display version'
     , '    -h, --help                     Display help information (this text)'
@@ -125,28 +125,29 @@ export default function (argv) {
       })(window, window);
 
       ;(function () {
-        // check for leaking
+        // check for leaks
         var cache = {}
         var newKeys = Object.keys(window)
 
         Object.keys(window).forEach(function (key) {
-          if (key.indexOf('webkit') === -1) {
-            cache[key] = window[key]
-            if (!${keysName}[key]) window[key] = undefined
+          if (key.indexOf('webkit') === -1) { // skip deprecated attributes
+            cache[key] = window[key] // cache it for potential exports
+            if (!${keysName}[key]) window[key] = undefined // remove leaked attribute
           }
         })
 
         Object.keys(${keysName}).forEach(function (key) {
           if (window[key] !== ${keysName}[key]) {
-            window[key] = ${keysName}[key]
+            window[key] = ${keysName}[key] // restore overwritten attribute
           }
         })
 
         var exports = [${exports}];
         exports.forEach(function (x) {
           console.log('webwrap: exporting [' + x + '] from wrapped global.')
-          window[x] = cache[x]
+          window[x] = cache[x] // export attribute to the true global object
         })
+        cache = undefined // put cache up for garbage collection
       })()
     })(window || this);
   `)
