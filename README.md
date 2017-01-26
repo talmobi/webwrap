@@ -1,8 +1,8 @@
 # webwrap - Super simple web wrapper/packager
 
-[![npm](https://img.shields.io/npm/v/webwrap.svg?maxAge=86400)](https://www.npmjs.com/package/wrollup)
-[![npm](https://img.shields.io/npm/dm/webwrap.svg?maxAge=86400)](https://www.npmjs.com/package/wrollup)
-[![npm](https://img.shields.io/npm/l/webwrap.svg?maxAge=86400)](https://www.npmjs.com/package/wrollup)
+[![npm](https://img.shields.io/npm/v/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
+[![npm](https://img.shields.io/npm/dm/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
+[![npm](https://img.shields.io/npm/l/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
 
 ## Simple to use
 ```bash
@@ -11,19 +11,17 @@ webwrap css/bundle.css js/vendors.js js/bundle.js > output.js
 ```
 
 # About
-A simple tool to wrap your css and js files into a single, scoped script file that unloads itself.
+A simple tool to wrap your css and js files into a single script file that unloads itself without polluting the global scope. Use `--export <string>` cli argument to export to the global object if desired.
 
 # Why
-Wrap your static css, and static oldskool vendor scripts (that attach to the global window object like window.jQuery, window.React etc), and your static project javascript into a single script.js that unloads itself.
+Sometimes it's easier to share/transport a single script. Sometimes a simple concat isn't enough. Sometimes your build step doesn't support this kind of thing.
 
-# Why not use webpack or rollup to bundle and scope your script files and css files?
-Sometimes you can do that, some times you can only use a static library script (the oldskool way), sometimes you have both.
-Whatever the case, this bundles them all into a single script file without needing any config files.
-Works well as an npm script for production.
+# Why not use webpack with style-loaders and css-modules and react-css-modules and all that jazz?
+This is a very simple step that doesn't care if you're using webpack, react etc and is not meant as a replacement for those things; just a simple secondary option for simple setups in some cases.
 
 # How
 The files are loaded (in order); CSS files (*.css) are read using fs.readFileSync and concatenated into a single string that is then appended as a style element to document.head on load.
-JS (all other files) are concatenaded, in order, after each other wrapped inside an iife.
+JS (all other files) are concatenated, in order, after each other and wrapped inside an iife.
 
 # Arguments
 ```bash
@@ -37,8 +35,8 @@ $ webwrap --help
   
   -o, --output                   Output file (stdout by default).
                                                                     
-  -x, --export                   Global variable to keep/export to
-                                 the true global object.
+  -x, --export                   Global variable to keep/export through
+                                 to the true global object.
                                  
   -v, --version                  Display version
   -h, --help                     Display help information (this text)
