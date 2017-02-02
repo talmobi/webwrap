@@ -1,8 +1,8 @@
 # webwrap - Super simple web wrapper/packager
 
-[![npm](https://img.shields.io/npm/v/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
-[![npm](https://img.shields.io/npm/dm/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
-[![npm](https://img.shields.io/npm/l/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/wrollup)
+[![npm](https://img.shields.io/npm/v/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/webwrap)
+[![npm](https://img.shields.io/npm/dm/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/webwrap)
+[![npm](https://img.shields.io/npm/l/webwrap.svg?maxAge=3600)](https://www.npmjs.com/package/webwrap)
 
 ## Simple to use
 ```bash
