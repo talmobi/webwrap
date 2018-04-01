@@ -40,7 +40,7 @@ test('command line arguments', function (t) {
 
   t.test('with basic setup', function (t) {
     t.plan(10)
-    var output = webwrap(argv('--export lib --export redom test/libs/r*.js test/libs/jquery-3.1.1.min.js test/libs/bootstrap* test/style.css test/vendor.js test/script.js'))
+    var output = webwrap(argv('--verbose --export lib --export redom test/libs/r*.js test/libs/jquery-3.1.1.min.js test/libs/bootstrap* test/style.css test/vendor.js test/script.js'))
     fs.writeFileSync('test/output.js', output)
 
     var logs = []
