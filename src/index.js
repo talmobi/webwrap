@@ -99,17 +99,17 @@ export default function (argv) {
   var jsText = buffers.scripts.join(';')
 
   var output = (`
-    ;(function (${global}) {
-      var window = ${global}
-      var ${keysName} = {}
+    ;(function (${ global }) {
+      var window = ${ global }
+      var ${ keysName } = {}
       Object.keys(window).forEach(function (key) {
         if (key.indexOf('webkit') === -1) {
-          ${keysName}[key] = window[key]
+          ${ keysName }[key] = window[key]
         }
       })
 
       ;(function () {
-        var css = '${cssText}'
+        var css = '${ cssText }'
         var head = document.head || document.getElementsByName('head')[0]
         var style = document.createElement('style')
         style.type = 'text/css'
@@ -123,7 +123,7 @@ export default function (argv) {
 
       ;(function (global, window) {
         ;(function () {
-          ${jsText}
+          ${ jsText }
         }).call(global)
       })(window, window);
 
@@ -135,17 +135,17 @@ export default function (argv) {
         Object.keys(window).forEach(function (key) {
           if (key.indexOf('webkit') === -1) { // skip deprecated attributes
             cache[key] = window[key] // cache it for potential exports
-            if (!${keysName}[key]) window[key] = undefined // remove leaked attribute
+            if (!${ keysName }[key]) window[key] = undefined // remove leaked attribute
           }
         })
 
-        Object.keys(${keysName}).forEach(function (key) {
-          if (window[key] !== ${keysName}[key]) {
-            window[key] = ${keysName}[key] // restore overwritten attribute
+        Object.keys(${ keysName }).forEach(function (key) {
+          if (window[key] !== ${ keysName }[key]) {
+            window[key] = ${ keysName }[key] // restore overwritten attribute
           }
         })
 
-        var exports = [${exports}];
+        var exports = [${ exports }];
         exports.forEach(function (x) {
           if (${ verbose }) { console.log('webwrap: exporting [' + x + '] from wrapped global.') }
           window[x] = cache[x] // export attribute to the true global object
