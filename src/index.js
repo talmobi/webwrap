@@ -2,9 +2,10 @@
 
 export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
-    boolean: ['h', 'v'],
+    boolean: ['h', 'v', 'V' ],
     alias: {
-      'version': ['v'],
+      'version': ['V'],
+      'verbose': ['v'],
       'help': ['h'],
       'output': ['o'],
       'exports': ['x', 'export']
@@ -32,12 +33,14 @@ export default function (argv) {
     , ''
   ].join('\n');
 
+  var verbose = (!!argv['verbose'] || !!argv['v'])
+
   if (!!argv['help'] || !!argv['h']) {
     console.error(usage)
     process.exit() // exit success
   }
 
-  if (!!argv['version'] || !!argv['v']) {
+  if (!!argv['version'] || !!argv['V']) {
     var pjson = require('../package.json')
     var name = pjson['name'] || pjson['NAME']
     var version = pjson['version'] || pjson['VERSION']
@@ -144,7 +147,7 @@ export default function (argv) {
 
         var exports = [${exports}];
         exports.forEach(function (x) {
-          console.log('webwrap: exporting [' + x + '] from wrapped global.')
+          if (${ verbose }) { console.log('webwrap: exporting [' + x + '] from wrapped global.') }
           window[x] = cache[x] // export attribute to the true global object
         })
         cache = undefined // put cache up for garbage collection
