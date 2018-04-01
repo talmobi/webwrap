@@ -1,11 +1,18 @@
 node_modules
 
-coverage
+# vim temp files
+*.swp
+*.swo
+*.swn
+*.swm
 
-test/output.js
-
-*.sw?
+# mac files
+*.DS_Store
 
 *.log*
 
-*.DS_Store
+dist/
+
+test/output.js
+
+coverage
