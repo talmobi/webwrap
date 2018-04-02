@@ -6,6 +6,7 @@ var program = require( 'commander' )
 
 var pkgjson = require( './package.json' )
 
+// TODO refactor arg parsing and use same in tests?
 program
 .version( pkgjson.name + ' ' + pkgjson.version )
 .usage( 'webwrap [options] <file ...>' )
