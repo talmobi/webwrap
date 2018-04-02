@@ -1,5 +1,8 @@
 // ref: https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects
 
+var mem = {}
+module.exports = mem
+
 var valueProperties = [
   'Infinity',
   'NaN',
@@ -186,8 +189,6 @@ var domInterfaces = [
   'XMLDocument',
 ]
 
-var mem = {}
-
 valueProperties.forEach( function ( item ) {
   item = item.trim()
   mem[ item ] = 'Value properties'
@@ -262,5 +263,3 @@ domInterfaces.forEach( function ( item ) {
   item = item.trim()
   mem[ item ] = 'DOM interfaces'
 } )
-
-export default mem
