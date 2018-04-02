@@ -144,6 +144,9 @@ module.exports = function (argv) {
                     break
 
                   case 'function':
+                    head = head.slice( 0, -identifier.count )
+                    return ( `${ head }\n;${ context }.${ name } = function ${ name }${ tail }` )
+
                   default:
                     // don't transform/explicitly prepend context
                     return ( `${ head }${ name }${ tail }` )
