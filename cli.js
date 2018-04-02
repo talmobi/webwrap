@@ -4,10 +4,10 @@ var fs = require( 'fs' )
 
 var program = require( 'commander' )
 
-var pjson = require( './package.json' )
+var pkgjson = require( './package.json' )
 
 program
-.version( pjson.name + ' ' + pjson.version )
+.version( pkgjson.name + ' ' + pkgjson.version )
 .usage( 'webwrap [options] <file ...>' )
 .option( '-I, --no-infect', 'disable implicit global infections' )
 .option( '-1, --exit-1', 'exit with error code 1 on errors' )
@@ -27,9 +27,6 @@ program
 .parse( process.argv )
 
 program.context = program.context || 'window'
-
-console.log( program.context )
-console.log( program.export )
 
 function increaseVerbosity ( v, total ) {
   return total + 1
