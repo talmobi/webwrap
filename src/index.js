@@ -1,9 +1,127 @@
 'use strict'
 
+import webBuiltins from './builtin-objects.js'
+
+function getTransformedBufferFromScope ( buffer, scope, transform )
+{
+  buffer = buffer.toString( 'utf8' )
+  var scope = scope || {}
+
+  var list = []
+
+  // combine scopes into a single list
+  // with name and position information
+
+  var localKeys = scope.locals[ '' ] || []
+  localKeys.forEach( function ( key ) {
+    var node = scope._locals[ '' ][ key ]
+    if ( node.id ) {
+      var start = node.id.start
+      var end = node.id.end
+      var type = node.id.type
+      var name = node.id.name
+
+      if ( name === key ) {
+        var item = {
+          lexical: true,
+          name: name,
+          start: start,
+          end: end
+        }
+
+        list.push( item )
+      }
+    }
+  } )
+
+  var exportedKeys = scope.globals.exported
+  exportedKeys.forEach( function ( key ) {
+    var node = scope.globals._exported[ key ]
+    if ( node ) {
+      var start = node.start
+      var end = node.end
+      var type = node.type
+      var name = node.name
+
+      if ( name === key ) {
+        var item = {
+          lexical: false,
+          name: name,
+          start: start,
+          end: end
+        }
+
+        list.push( item )
+      }
+    }
+  } )
+
+  // sort the list by positions
+  list.sort( function ( a, b ) {
+    return a.start - b.start
+  } )
+
+  // transform buffer contents backwards
+  // in order to keep position information in order
+  list.reverse().forEach( function ( item ) {
+    var head = buffer.slice( 0, item.start )
+    var tail = buffer.slice( item.end )
+
+    var identifier = ''
+
+    // handle preceding `var`, `let`, `const`
+    if ( item.lexical ) {
+      var count = 0
+      var word = ''
+      for ( var i = 0; i < head.length; i++ ) {
+        count++
+
+        var c = head[ head.length - ( i + 1 ) ]
+
+        if ( c.trim().length > 0 ) {
+          word = c + word
+        } else {
+          if ( word ) {
+            break
+          } else {
+            // haven't foudn anything yet, just started
+          }
+        }
+      }
+
+      identifier = word.trim()
+      if ( identifier.length > 0 ) {
+        // word found
+        // console.log( 'found word: ' + word )
+
+        switch ( identifier ) {
+          case 'var':
+          case 'let':
+          case 'const':
+            // cut off the identifier since we're adding a global
+            head = head.slice( 0, -count )
+            break
+
+          default:
+        }
+      }
+    }
+
+    // console.log( 'transformed: ' + item.name )
+    buffer = transform( head, item.name, tail, identifier )
+  } )
+
+  return buffer
+}
+
 export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
-    boolean: ['h', 'v', 'V' ],
+    boolean: ['h', 'v', 'V', 'd', 'D', '1' ],
     alias: {
+      'exit-1': [ '-1' ],
+      'detect': [ 'd' ],
+      'detect-all': [ 'D' ],
+      'context': [ 'C' ], // global context key name
       'version': ['V'],
       'verbose': ['v'],
       'help': ['h'],
@@ -15,6 +133,14 @@ export default function (argv) {
   var fs = require('fs')
   var path = require('path')
   var glob = require('glob')
+
+  var clc = require( 'cli-color' )
+
+  // var detectGlobals = require( '../../acorn-globals/index.js' )
+  // var detectGlobals = require( 'lexical-scope' )
+  // var detectGlobals = require( '../../lexical-scope/index.js' )
+  var detectGlobals = require( '@talmobi/lexical-scope' )
+
   var usage = [
       ''
     , '  Usage: webwrap [options] <files(js|css)>... > output.js'
@@ -61,6 +187,11 @@ export default function (argv) {
     scripts: []
   }
 
+  var detectionList = []
+  var detectMode = argv[ 'detect' ] || argv[ 'detect-all' ]
+
+  var transformGlobals = true
+
   var files = argv._ || []
   if (!Array.isArray(files)) files = [files]
   var _files = []
@@ -70,6 +201,25 @@ export default function (argv) {
 
       var buffer = fs.readFileSync(file, 'utf8')
       var target = 'scripts'
+
+      // var scope = detectGlobals( buffer )
+      var scope = detectGlobals( buffer )
+
+      detectionList.push( {
+        file: file,
+        scope: scope
+      } )
+
+      if ( transformGlobals && !detectMode ) {
+        buffer = getTransformedBufferFromScope(
+          buffer,
+          scope,
+          function ( head, name, tail, identifier ) {
+            // console.log( 'identifier was: ' + identifier )
+            return ( head + context + '.' + name + tail )
+          }
+        )
+      }
 
       switch (suffix) {
         case 'css':
@@ -81,6 +231,79 @@ export default function (argv) {
       buffers[target].push(buffer)
     })
   })
+
+  if ( detectMode ) {
+    var exitCode = 0 // success
+    var notify = false
+
+    detectionList.forEach( function ( item ) {
+      console.log()
+      console.log( clc.black( ' -- webwrap @talmobi/lexical-scope -- ' ) )
+      console.log( 'file: ' + clc.cyan( item.file ) )
+
+      var scope = item.scope || {}
+
+      var localKeys = scope.locals[ '' ] || []
+
+      localKeys.forEach( function ( key ) {
+        var node = scope._locals[ '' ][ key ]
+
+        if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+          // skip web builtins
+          return
+        }
+
+        exitCode = 1
+
+        if ( node.id ) {
+          var start = node.id.start
+          var end = node.id.end
+          var type = node.id.type
+          var name = node.id.name
+
+          var span = clc.red( '  lexical' ) + ' : ' + name
+          span += ' (' + start + ':' + end + ')'
+
+          console.log( span )
+        }
+      } )
+
+      var exportedKeys = scope.globals.exported
+
+      exportedKeys.forEach( function ( key ) {
+        var node = scope.globals._exported[ key ]
+
+        if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+          // skip web builtins
+          return
+        }
+
+        exitCode = 1
+
+        if ( node ) {
+          var start = node.start
+          var end = node.end
+          var type = node.type
+          var name = node.name
+
+          var span = clc.yellow( '  export' ) + ' : ' + name
+          span += ' (' + start + ':' + end + ')'
+
+          console.log( span )
+        }
+      } )
+    } )
+
+    if ( notify ) {
+      notify()
+    }
+
+    if ( argv[ 'exit-1' ] ) {
+      process.exit( exitCode )
+    } else {
+      process.exit()
+    }
+  }
 
   var UID = (function UID () {
     var counter = 0
