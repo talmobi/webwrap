@@ -7,7 +7,7 @@ UndeclaredGlobalOnlyShownToScript = (function( exports ){
     name: 'muumi'
   }
 
-  function UndeclaredGlobalFunction ( num ) {
+  function UndeclaredScopedNamedFunction ( num ) {
     return num * 2
   }
 
@@ -15,3 +15,7 @@ UndeclaredGlobalOnlyShownToScript = (function( exports ){
 
   return exports.foo
 })({});
+
+function UndeclaredGlobalNamedFunction ( num ) {
+  return num * 2
+}
