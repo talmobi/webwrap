@@ -180,61 +180,14 @@ module.exports = function (argv) {
     var exitCode = 0 // success
     var notify = false
 
-    detectionList.forEach( function ( item ) {
-      console.log()
-      console.log( clc.black( ' -- webwrap @talmobi/lexical-scope -- ' ) )
-      console.log( 'file: ' + clc.cyan( item.file ) )
+    if ( detectionList.length > 0 ) exitCode = 1
 
-      var scope = item.scope || {}
+    detectionList.forEach( function ( logs ) {
+      logs.forEach( function ( log ) {
+        var type = log.type
+        var args = log.args
 
-      var localKeys = scope.locals[ '' ] || []
-
-      localKeys.forEach( function ( key ) {
-        var node = scope._locals[ '' ][ key ]
-
-        if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
-          // skip web builtins
-          return
-        }
-
-        exitCode = 1
-
-        if ( node.id ) {
-          var start = node.id.start
-          var end = node.id.end
-          var type = node.id.type
-          var name = node.id.name
-
-          var span = clc.red( '  lexical' ) + ' : ' + name
-          span += ' (' + start + ':' + end + ')'
-
-          console.log( span )
-        }
-      } )
-
-      var exportedKeys = scope.globals.exported
-
-      exportedKeys.forEach( function ( key ) {
-        var node = scope.globals._exported[ key ]
-
-        if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
-          // skip web builtins
-          return
-        }
-
-        exitCode = 1
-
-        if ( node ) {
-          var start = node.start
-          var end = node.end
-          var type = node.type
-          var name = node.name
-
-          var span = clc.yellow( '  export' ) + ' : ' + name
-          span += ' (' + start + ':' + end + ')'
-
-          console.log( span )
-        }
+        console[ type ].apply( this, args )
       } )
     } )
 
