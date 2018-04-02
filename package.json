@@ -1,6 +1,6 @@
 {
   "name": "webwrap",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "description": "wrap js and css files into a single, self-contained, self-unwrapping script",
   "main": "index.js",
   "bin": {
