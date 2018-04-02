@@ -150,7 +150,7 @@ module.exports = function (argv) {
                 }
 
                 // NOTE! semicolon ( ; ) and dot ( . ) between head, context and name
-                return ( `${ head };${ context }.${ name }${ tail }` )
+                return ( `${ head }\n;${ context }.${ name }${ tail }` )
               }
             )
           }
