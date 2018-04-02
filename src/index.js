@@ -275,11 +275,334 @@ module.exports = function (argv) {
     })(window || this);
   `)
 
-  if (!!argv.output) {
-    fs.writeFileSync(argv.output, output, 'utf8')
-    console.error('webwrap written to: ' + argv.output)
+  return output
+
+  // if (!!argv.output) {
+  //   fs.writeFileSync(argv.output, output, 'utf8')
+  //   console.error('webwrap written to: ' + argv.output)
+  //   return undefined
+  // } else {
+  //   return output
+  // }
+
+  function getTransformedBufferFromScope ( buffer, scope, transform )
+  {
+    buffer = buffer.toString( 'utf8' )
+    var scope = scope || {}
+
+    var list = []
+
+    // combine scopes into a single list
+    // with name and position information
+
+    var localKeys = scope.locals[ '' ] || []
+    localKeys.forEach( function ( key ) {
+      var node = scope._locals[ '' ][ key ]
+      if ( node.id ) {
+        var start = node.id.start
+        var end = node.id.end
+        var type = node.id.type
+        var name = node.id.name
+
+        if ( name === key ) {
+          var item = {
+            lexical: true,
+            name: name,
+            start: start,
+            end: end
+          }
+
+          list.push( item )
+        }
+      }
+    } )
+
+    var exportedKeys = scope.globals.exported
+    exportedKeys.forEach( function ( key ) {
+      var node = scope.globals._exported[ key ]
+      if ( node ) {
+        var start = node.start
+        var end = node.end
+        var type = node.type
+        var name = node.name
+
+        if ( name === key ) {
+          var item = {
+            lexical: false,
+            name: name,
+            start: start,
+            end: end
+          }
+
+          list.push( item )
+        }
+      }
+    } )
+
+    // sort the list by positions
+    list.sort( function ( a, b ) {
+      return a.start - b.start
+    } )
+
+    // NOTE!
+    // transform buffer contents backwards
+    // in order to keep position information in order
+    list.reverse().forEach( function ( item ) {
+      var head = buffer.slice( 0, item.start )
+      var tail = buffer.slice( item.end )
+
+      // handle preceding `var`, `let`, `const`
+      var identifier = getIdentifier( buffer, item.start, item.end, item.name )
+
+      // console.log( 'transformed: ' + item.name )
+      buffer = transform( head, item.name, tail, identifier )
+    } )
+
+    return buffer
+  }
+
+  // first word like string before $name at $start-$end
+  function getIdentifier ( text, start, end, name )
+  {
+    var identifier = ''
+
+    var count = 0 // full traverse length including whitespace
+    var word = ''
+    for ( var i = start - 1; i >= 0; i-- ) {
+      count++
+
+      var c = text[ i ]
+      var trimmed = c.trim()
+
+      // don't construct across multiple lines
+      if ( c === '\n' && word.length > 0 ) {
+        // done, break out of loop
+        break
+      }
+
+      if ( trimmed.length > 0 ) {
+        // construct word backwards
+        word = c + word
+      } else { // whitespace character
+        if ( word.length > 0 ) {
+          // done, break out of loop
+          break
+        }
+      }
+    }
+
+    identifier = word.trim()
+    // console.log( 'getting identifier: ' + identifier )
+
+    if ( identifier.length > 0 ) {
+      return {
+        name: identifier,
+        start: start - count,
+        end: start - count + identifier.length,
+        count: count,
+
+        target: {
+          name: name,
+          start: start,
+          end: end
+        }
+      }
+    }
+
     return undefined
-  } else {
-    return output
+  }
+
+  function getRightMostNonWhitespaceCharacter ( text, position )
+  {
+    for ( var i = position; i < text.length; i++ ) {
+      var c = text[ i ] || ''
+      var trimmed = c.trim()
+
+      if ( trimmed.length > 0 ) return c
+    }
+
+    return ''
+  }
+
+  function getLeftMostNonWhitespaceCharacter ( text, position )
+  {
+    for ( var i = position - 1; i >= 0; i-- ) {
+      var c = text[ i ] || ''
+      var trimmed = c.trim()
+
+      if ( trimmed.length > 0 ) return c
+    }
+
+    return ''
+  }
+
+  function parseDetectionList ( text, filename, scope )
+  {
+    var list = []
+
+    var console = {
+      log: function ( ...args ) {
+        list.push( { type: 'log', args: args } )
+      },
+      error: function ( ...args ) {
+        list.push( { type: 'error', args: args } )
+      }
+    }
+
+    console.log()
+    console.log( clc.black( ' -- webwrap @talmobi/lexical-scope -- ' ) )
+    console.log( 'file: ' + clc.cyan( filename ) )
+
+    var localKeys = scope.locals[ '' ] || []
+    localKeys.forEach( function ( key ) {
+      var node = scope._locals[ '' ][ key ]
+
+      if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+        // skip web builtins
+        return
+      }
+
+      if ( node.id ) {
+        var start = node.id.start
+        var end = node.id.end
+        var type = node.id.type
+        var name = node.id.name
+
+        // var label = clc.yellow( 'lexical' )
+        var identifier = getIdentifier( text, start, end )
+        identifier = identifier && identifier.name || ''
+
+        var scopeType = clc.yellow( 'lexical' )
+        var label = clc.yellowBright( name )
+        var padding = generateWhitespace( 18 - ( 'lexical' + name ).length )
+
+        // colorize identifier
+        switch ( identifier ) {
+          case 'function':
+            identifier = clc.blue( identifier )
+            break
+          case 'var':
+          case 'let':
+          case 'const':
+            identifier = clc.red( identifier.slice( 0, 3 ) )
+          default:
+            identifier = clc.black( identifier.slice( 0, 3 ) )
+        }
+
+        var span = (
+          `  ${ scopeType } ${ label } ${ padding } [${ identifier }] (${ start }:${ end })`
+        )
+
+        console.log( span )
+      }
+    } )
+
+    var exportedKeys = scope.globals.exported
+    exportedKeys.forEach( function ( key ) {
+      var node = scope.globals._exported[ key ]
+
+      if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+        // skip web builtins
+        return
+      }
+
+      if ( node ) {
+        var start = node.start
+        var end = node.end
+        var type = node.type
+        var name = node.name
+
+        // var label = clc.magentaBright( 'export' )
+        var identifier = getIdentifier( text, start, end )
+        identifier = identifier && identifier.name || ''
+
+        var scopeType = clc.magentaBright( ' export' )
+        var label = clc.yellowBright( name )
+        var padding = generateWhitespace( 18 - ( ' export' + name ).length )
+
+        // colorize identifier
+        switch ( identifier ) {
+          case 'function':
+            identifier = clc.blue( identifier )
+            break
+          case 'var':
+          case 'let':
+          case 'const':
+            identifier = clc.red( identifier )
+          default:
+            identifier = clc.black( identifier )
+        }
+
+        var span = (
+          `  ${ scopeType } ${ label } ${ padding } [${ identifier }] (${ start }:${ end })`
+        )
+
+        console.log( span )
+      }
+    } )
+
+    return list
+  }
+
+  function parseDetectionError ( text, filename, err )
+  {
+    var list = []
+
+    var console = {
+      log: function ( ...args ) {
+        list.push( { type: 'log', args: args } )
+      },
+      error: function ( ...args ) {
+        list.push( { type: 'error', args: args } )
+      }
+    }
+
+    var name = err.name || 'Error'
+    var message = err.message || err.description || String( err )
+    message = String( err )
+    console.log( err )
+
+    console.log()
+    console.log( clc.black( ' -- detection error | webwrap @talmobi/lexical-scope -- ' ) )
+    console.log( 'file: ' + clc.cyan( filename ) )
+
+    if ( message.indexOf( name ) === 0 ) {
+      name = ''
+    } else {
+      message = name + ': ' + message
+      name = ''
+    }
+
+    // colorize words with Error in them
+    message = (
+      message
+      .split( /\s+/ )
+      .map( function ( word ) {
+        if ( word.indexOf( 'Error' ) >= 0 ) {
+          return clc.red( word )
+        }
+        return word
+      } )
+      .join( ' ' )
+    )
+
+    console.log(
+      `${ name && name || '' }${ message } ${ filename }`
+    )
+
+    return list
+  }
+
+  function generateWhitespace ( count, character )
+  {
+    // default to single space
+    if ( typeof character !== 'string' ) character = ' '
+
+    var buffer = ''
+    for ( var i = 0; i < count; i++ ) {
+      buffer += character
+    }
+
+    return buffer
   }
 }
