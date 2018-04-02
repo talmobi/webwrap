@@ -16,3 +16,5 @@ dist/
 test/output.js
 
 coverage
+
+test-gobals.txt
