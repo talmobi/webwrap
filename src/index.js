@@ -88,27 +88,16 @@ module.exports = function (argv) {
     glob.sync(file).forEach(function (file) {
       var suffix = file.slice(file.lastIndexOf('.') + 1)
 
-      var buffer = fs.readFileSync(file, 'utf8')
-      var target = 'scripts'
-
-      // var scope = detectGlobals( buffer )
-      var scope = detectGlobals( buffer )
-
-      detectionList.push( {
-        file: file,
-        scope: scope
-      } )
-
-      if ( transformGlobals && !detectMode ) {
-        buffer = getTransformedBufferFromScope(
-          buffer,
-          scope,
-          function ( head, name, tail, identifier ) {
-            // console.log( 'identifier was: ' + identifier )
-            return ( head + context + '.' + name + tail )
-          }
-        )
+      var buffer
+      try {
+        buffer = fs.readFileSync(file, 'utf8')
+      } catch ( err ) {
+        if ( err.code === 'EISDIR' ) {
+          // ignore
+          return console.error( 'ignoring directory: ' + file )
+        }
       }
+      var target = 'scripts'
 
       switch (suffix) {
         case 'css':
