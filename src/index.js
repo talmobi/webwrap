@@ -115,46 +115,10 @@ module.exports = function (argv) {
           detectionList.push( parseDetectionList( buffer, file, scope ) )
 
           if ( transformGlobals && !detectMode ) {
-            buffer = getTransformedBufferFromScope(
+            buffer = getContextInfectedBufferFromScope(
               buffer,
               scope,
-              function ( head, name, tail, identifier ) {
-                // make sure to only transform recognied identifiers
-                // and not named functions
-
-                var leftMostCharacter = getLeftMostNonWhitespaceCharacter( head, head.length )
-                var rightMostCharacter = getRightMostNonWhitespaceCharacter( tail, 1 )
-                if ( rightMostCharacter === ',' || leftMostCharacter === ',' ) {
-                  // ignore multi variable declarations
-                  // don't transform/explicitly prepend context
-                  // return ( `${ head }${ 'GIRAFFE' }${ tail }` )
-                }
-
-                if ( leftMostCharacter === ',' ) {
-                  // special case with multi variable declarations
-                  return ( `${ head }${ context }.${ name }${ tail }` )
-                }
-
-                var label = identifier && identifier.name || ''
-                switch ( label ) {
-                  case 'var':
-                  case 'let':
-                  case 'const':
-                    head = head.slice( 0, -identifier.count )
-                    break
-
-                  case 'function':
-                    head = head.slice( 0, -identifier.count )
-                    return ( `${ head }\n;${ context }.${ name } = function ${ name }${ tail }` )
-
-                  default:
-                    // don't transform/explicitly prepend context
-                    return ( `${ head }${ name }${ tail }` )
-                }
-
-                // NOTE! semicolon ( ; ) and dot ( . ) between head, context and name
-                return ( `${ head }\n;${ context }.${ name }${ tail }` )
-              }
+              context
             )
           }
         } catch ( err ) {
@@ -287,6 +251,88 @@ module.exports = function (argv) {
   // } else {
   //   return output
   // }
+
+  function getContextInfectedBufferFromScope ( buffer, scope, context )
+  {
+    buffer = buffer.toString( 'utf8' )
+    var scope = scope || {}
+
+    var list = []
+
+    // combine scopes into a single list
+    // with name and position information
+
+    var localKeys = scope.locals[ '' ] || []
+    localKeys.forEach( function ( key ) {
+      var node = scope._locals[ '' ][ key ]
+      if ( node.id ) {
+        var start = node.id.start
+        var end = node.id.end
+        var type = node.id.type
+        var name = node.id.name
+
+        if ( name === key ) {
+          var item = {
+            lexical: true,
+            name: name,
+            start: start,
+            end: end
+          }
+
+          list.push( item )
+        }
+      }
+    } )
+
+    var exportedKeys = scope.globals.exported
+    exportedKeys.forEach( function ( key ) {
+      var node = scope.globals._exported[ key ]
+      if ( node ) {
+        var start = node.start
+        var end = node.end
+        var type = node.type
+        var name = node.name
+
+        if ( name === key ) {
+          var item = {
+            lexical: false,
+            name: name,
+            start: start,
+            end: end
+          }
+
+          list.push( item )
+        }
+      }
+    } )
+
+    // sort the list by positions
+    list.sort( function ( a, b ) {
+      return a.start - b.start
+    } )
+
+    var script = ''
+
+    list.forEach( function ( item ) {
+      var name = item.name
+
+      // handle preceding `var`, `let`, `const`
+      var identifier = getIdentifier( buffer, item.start, item.end, item.name )
+
+      script += `\n;${ context }[ '${ name }' ] = ${ name };`
+    } )
+
+    // add context infection script
+    // expose all variables to the context scope
+    buffer += (`
+      ;(function () {
+      /* webwrap context infection script */
+      ${ script }
+      })();
+    `)
+
+    return buffer
+  }
 
   function getTransformedBufferFromScope ( buffer, scope, transform )
   {
