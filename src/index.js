@@ -106,6 +106,72 @@ module.exports = function (argv) {
         default: // assume javascript file
           target = 'scripts'
       }
+
+      if ( target === 'scripts' ) {
+        // var scope = detectGlobals( buffer )
+        try {
+          var scope = detectGlobals( buffer )
+
+          detectionList.push( parseDetectionList( buffer, file, scope ) )
+
+          if ( transformGlobals && !detectMode ) {
+            buffer = getTransformedBufferFromScope(
+              buffer,
+              scope,
+              function ( head, name, tail, identifier ) {
+                // make sure to only transform recognied identifiers
+                // and not named functions
+
+                var leftMostCharacter = getLeftMostNonWhitespaceCharacter( head, head.length )
+                var rightMostCharacter = getRightMostNonWhitespaceCharacter( tail, 1 )
+                if ( rightMostCharacter === ',' || leftMostCharacter === ',' ) {
+                  // ignore multi variable declarations
+                  // don't transform/explicitly prepend context
+                  // return ( `${ head }${ 'GIRAFFE' }${ tail }` )
+                }
+
+                if ( leftMostCharacter === ',' ) {
+                  // special case with multi variable declarations
+                  return ( `${ head }${ context }.${ name }${ tail }` )
+                }
+
+                var label = identifier && identifier.name || ''
+                switch ( label ) {
+                  case 'var':
+                  case 'let':
+                  case 'const':
+                    head = head.slice( 0, -identifier.count )
+                    break
+
+                  case 'function':
+                  default:
+                    // don't transform/explicitly prepend context
+                    return ( `${ head }${ name }${ tail }` )
+                }
+
+                // NOTE! semicolon ( ; ) and dot ( . ) between head, context and name
+                return ( `${ head };${ context }.${ name }${ tail }` )
+              }
+            )
+          }
+        } catch ( err ) {
+          if ( !detectMode ) {
+            var item = { err: err }
+            var name = item.err.name || 'Error'
+            var message = item.err.message || item.err.description || String( item.err )
+            message = String( item.err )
+
+            // console.error()
+            // console.error( clc.black( ' -- parsing failed | webwrap @talmobi/lexical-scope -- ' ) )
+            // console.error( 'SASD: ' + clc.cyan( item.file ) )
+            console.error( err )
+            console.error( 'file: ' + clc.cyan( item.file ) )
+          }
+
+          detectionList.push( parseDetectionError( buffer, file, err ) )
+        }
+      }
+
       buffers[target].push(buffer)
     })
   })
