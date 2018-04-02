@@ -234,7 +234,8 @@ module.exports = function (argv) {
 
         var exports = [${ exports }];
         exports.forEach(function (x) {
-          if (${ verbose }) { console.log('webwrap: exporting [' + x + '] from wrapped global.') }
+          var xport = cache[x]
+          if (${ verbose }) { console.log('webwrap: exporting [' + x + '] type: ' + ( typeof xport ) ) }
           window[x] = cache[x] // export attribute to the true global object
         })
         cache = undefined // put cache up for garbage collection
@@ -312,6 +313,7 @@ module.exports = function (argv) {
     } )
 
     var script = ''
+    var verboseScript = ''
 
     list.forEach( function ( item ) {
       var name = item.name
@@ -320,6 +322,8 @@ module.exports = function (argv) {
       var identifier = getIdentifier( buffer, item.start, item.end, item.name )
 
       script += `\n;${ context }[ '${ name }' ] = ${ name };`
+
+      verboseScript += `\n;console.log( 'webwrap: infecting ${ context }[${ name }], type: ' + ( typeof ${ name }) );`
     } )
 
     // add context infection script
@@ -330,6 +334,16 @@ module.exports = function (argv) {
       ${ script }
       })();
     `)
+
+    if ( verbose ) {
+      // add infection reports
+      buffer += (`
+        ;(function () {
+        /* webwrap --verbose  */
+        ${ verboseScript }
+        })();
+      `)
+    }
 
     return buffer
   }
