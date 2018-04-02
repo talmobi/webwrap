@@ -27,6 +27,8 @@
   "author": "talmobi <talmo.christian@gmail.com>",
   "license": "MIT",
   "dependencies": {
+    "@talmobi/lexical-scope": "~1.3.0",
+    "cli-color": "~1.2.0",
     "glob": "7.1.1",
     "minimist": "1.2.0"
   },
