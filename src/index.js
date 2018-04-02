@@ -2,23 +2,7 @@
 
 var webBuiltins = require( __dirname + '/../src/builtin-objects.js' )
 
-module.exports = function (argv) {
-  argv = require('minimist')(argv.slice(2), {
-    boolean: ['h', 'v', 'V', 'd', 'D', '1', 'T' ],
-    alias: {
-      'notransform': [ 'T', 'notrans' ],
-      'exit-1': [ '1' ],
-      'detect': [ 'd' ],
-      'detect-all': [ 'D' ],
-      'context': [ 'C' ], // global context key name
-      'version': ['V'],
-      'verbose': ['v'],
-      'help': ['h'],
-      'output': ['o'],
-      'exports': ['x', 'export']
-    }
-  })
-
+module.exports = function ( program ) {
   var fs = require('fs')
   var path = require('path')
   var glob = require('glob')
@@ -30,46 +14,13 @@ module.exports = function (argv) {
   // var detectGlobals = require( '../../lexical-scope/index.js' )
   var detectGlobals = require( '@talmobi/lexical-scope' )
 
-  var usage = [
-      ''
-    , '  Usage: webwrap [options] <files(js|css)>... > output.js'
-    , ''
-    , '  Sample: webwrap css/bundle.min.css js/vendors.min.js js/bundle.min.js > output.js'
-    , ''
-    , '  Options:'
-    , ''
-    , '    -o, --output                   Output file (stdout by default).'
-    , ''
-    , '    -x, --export                   Global variable to keep/export through'
-    , '                                   to the true global object.'
-    , ''
-    , '    -v, --version                  Display version'
-    , '    -h, --help                     Display help information (this text)'
-    , ''
-  ].join('\n');
+  var _exports = program.export || []
 
-  var verbose = (!!argv['verbose'] || !!argv['v'])
-
-  if (!!argv['help'] || !!argv['h']) {
-    console.error(usage)
-    process.exit() // exit success
-  }
-
-  if (!!argv['version'] || !!argv['V']) {
-    var pjson = require('../package.json')
-    var name = pjson['name'] || pjson['NAME']
-    var version = pjson['version'] || pjson['VERSION']
-    console.error(name + ' version: ' + version)
-    process.exit() // exit success
-  }
-
-  var context = argv.context || 'window'
-
-  var exports = argv.exports || []
-  if (!Array.isArray(exports)) exports = [exports]
-  exports = exports.map(function (item) {
+  _exports = _exports.map(function (item) {
     return ('"' + String(item).split(/["']+/).join('') + '"')
   })
+
+  console.log( _exports )
 
   var buffers = {
     styles: [],
@@ -77,11 +28,9 @@ module.exports = function (argv) {
   }
 
   var detectionList = []
-  var detectMode = argv[ 'detect' ] || argv[ 'detect-all' ]
+  var detectMode = program.detect
 
-  var transformGlobals = !argv[ 'notransform' ]
-
-  var files = argv._ || []
+  var files = program.args || []
   if (!Array.isArray(files)) files = [files]
   var _files = []
   files.forEach(function (file) {
@@ -114,11 +63,11 @@ module.exports = function (argv) {
 
           detectionList.push( parseDetectionList( buffer, file, scope ) )
 
-          if ( transformGlobals && !detectMode ) {
+          if ( !program.noInfect && !program.detect ) {
             buffer = getContextInfectedBufferFromScope(
               buffer,
               scope,
-              context
+              program.context
             )
           }
         } catch ( err ) {
@@ -162,7 +111,7 @@ module.exports = function (argv) {
       notify()
     }
 
-    if ( argv[ 'exit-1' ] ) {
+    if ( program.exit1 ) {
       process.exit( exitCode )
     } else {
       process.exit()
@@ -232,10 +181,10 @@ module.exports = function (argv) {
           }
         })
 
-        var exports = [${ exports }];
-        exports.forEach(function (x) {
+        var _exports = [${ _exports }];
+        _exports.forEach(function (x) {
           var xport = cache[x]
-          if (${ verbose }) { console.log('webwrap: exporting [' + x + '] type: ' + ( typeof xport ) ) }
+          if (${ program.verbose }) { console.log('webwrap: exporting [' + x + '] type: ' + ( typeof xport ) ) }
           window[x] = cache[x] // export attribute to the true global object
         })
         cache = undefined // put cache up for garbage collection
@@ -335,11 +284,11 @@ module.exports = function (argv) {
       })();
     `)
 
-    if ( verbose ) {
+    if ( program.verbose >= 2 ) {
       // add infection reports
       buffer += (`
         ;(function () {
-        /* webwrap --verbose  */
+        /* webwrap verbosity: -vv  */
         ${ verboseScript }
         })();
       `)
@@ -520,7 +469,7 @@ module.exports = function (argv) {
     localKeys.forEach( function ( key ) {
       var node = scope._locals[ '' ][ key ]
 
-      if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+      if ( webBuiltins[ key ] ) {
         // skip web builtins
         return
       }
@@ -564,7 +513,7 @@ module.exports = function (argv) {
     exportedKeys.forEach( function ( key ) {
       var node = scope.globals._exported[ key ]
 
-      if ( !argv[ 'detect-all' ] && webBuiltins[ key ] ) {
+      if ( webBuiltins[ key ] ) {
         // skip web builtins
         return
       }

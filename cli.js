@@ -2,35 +2,54 @@
 
 var fs = require( 'fs' )
 
-// parse cli arguments
-var argv = require( 'minimist' )(
-  process.argv.slice( 2 ), {
-    boolean: ['h', 'v', 'V', 'd', 'D', '1', 'T' ],
-    alias: {
-      'notransform': [ 'T', 'notrans' ],
-      'exit-1': [ '1' ],
-      'detect': [ 'd' ],
-      'detect-all': [ 'D' ],
-      'context': [ 'C' ], // global context key name
-      'version': ['V'],
-      'verbose': ['v'],
-      'help': ['h'],
-      'output': ['o'],
-      'exports': ['x', 'export']
-    }
-  }
-)
+var program = require( 'commander' )
 
-var output = require( './dist/bundle.js' )( process.argv )
+var pjson = require( './package.json' )
+
+program
+.version( pjson.name + ' ' + pjson.version )
+.usage( 'webwrap [options] <file ...>' )
+.option( '-I, --no-infect', 'disable implicit global infections' )
+.option( '-1, --exit-1', 'exit with error code 1 on errors' )
+.option( '-d, --detect', 'detect and report implicit globals only' )
+.option( '-C, --context <name>', 'global context key name, defaults to `window`' )
+.option( '-v, --verbose', 'verbose output, -v, -vv', increaseVerbosity, 0 )
+.option( '-o, --output <file>', 'output file ( stdout by default )' )
+.option( '-x, --export [name]', 'print help text', addExport, [] )
+.on( '--help', function () {
+  console.log( '' )
+  console.log( '  Examples:' )
+  console.log( '' )
+  console.log( '    $ webwrap css/bundle.min.css js/vendors.min.js js/bundle.min.js > output.js' )
+  console.log( '    $ webwrap -x Highcharts -x moment -x React vendor/** -o output.js' )
+  console.log( '' )
+} )
+.parse( process.argv )
+
+program.context = program.context || 'window'
+
+console.log( program.context )
+console.log( program.export )
+
+function increaseVerbosity ( v, total ) {
+  return total + 1
+}
+
+function addExport ( val, list ) {
+  list.push( val )
+  return list
+}
+
+var output = require( './dist/bundle.js' )( program )
 
 // check for syntax error on output
 var passlint = require( 'passlint' )
 var ECMA2015 = 6
 var errline = passlint( output, ECMA2015 )
 
-if ( !!argv.output ) {
-  fs.writeFileSync( argv.output, output, 'utf8' )
-  console.error( 'webwrap written to: ' + argv.output )
+if ( program.output ) {
+  fs.writeFileSync( program.output, output, 'utf8' )
+  console.error( 'webwrap written to: ' + program.output )
 } else {
   // print to stdout
   console.log( output )
@@ -38,7 +57,7 @@ if ( !!argv.output ) {
 
 // print syntax error warnings
 if ( errline ) {
-  var target = argv.output || 'stdout'
+  var target = program.output || 'stdout'
   console.error()
   console.error( ' == webwrap warning, syntax error found == ')
   console.error( target + ':' + errline )
