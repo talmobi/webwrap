@@ -20,15 +20,12 @@ module.exports = function ( program ) {
     return ('"' + String(item).split(/["']+/).join('') + '"')
   })
 
-  console.log( _exports )
-
   var buffers = {
     styles: [],
     scripts: []
   }
 
   var detectionList = []
-  var detectMode = program.detect
 
   var files = program.args || []
   if (!Array.isArray(files)) files = [files]
@@ -71,7 +68,7 @@ module.exports = function ( program ) {
             )
           }
         } catch ( err ) {
-          if ( !detectMode ) {
+          if ( !program.detect ) {
             var item = { err: err }
             var name = item.err.name || 'Error'
             var message = item.err.message || item.err.description || String( item.err )
@@ -92,7 +89,7 @@ module.exports = function ( program ) {
     })
   })
 
-  if ( detectMode ) {
+  if ( program.detect ) {
     var exitCode = 0 // success
     var notify = false
 
