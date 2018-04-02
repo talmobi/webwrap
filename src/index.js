@@ -116,9 +116,10 @@ function getTransformedBufferFromScope ( buffer, scope, transform )
 
 export default function (argv) {
   argv = require('minimist')(argv.slice(2), {
-    boolean: ['h', 'v', 'V', 'd', 'D', '1' ],
+    boolean: ['h', 'v', 'V', 'd', 'D', '1', 'T' ],
     alias: {
-      'exit-1': [ '-1' ],
+      'notransform': [ 'T', 'notrans' ],
+      'exit-1': [ '1' ],
       'detect': [ 'd' ],
       'detect-all': [ 'D' ],
       'context': [ 'C' ], // global context key name
@@ -190,7 +191,7 @@ export default function (argv) {
   var detectionList = []
   var detectMode = argv[ 'detect' ] || argv[ 'detect-all' ]
 
-  var transformGlobals = true
+  var transformGlobals = !argv[ 'notransform' ]
 
   var files = argv._ || []
   if (!Array.isArray(files)) files = [files]
