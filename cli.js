@@ -17,6 +17,7 @@ program
 .option( '-v, --verbose', 'verbose output, -v, -vv', increaseVerbosity, 0 )
 .option( '-o, --output <file>', 'output file ( stdout by default )' )
 .option( '-x, --export [name]', 'print help text', addExport, [] )
+.option( '-a, --export-all', 'export everything' )
 .on( '--help', function () {
   console.log( '' )
   console.log( '  Examples:' )

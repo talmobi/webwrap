@@ -174,11 +174,31 @@ module.exports = function ( program ) {
 
         Object.keys(${ keysName }).forEach(function (key) {
           if (window[key] !== ${ keysName }[key]) {
-            window[key] = ${ keysName }[key] // restore overwritten attribute
+            // restore overwritten attribute from original
+            window[key] = ${ keysName }[key]
           }
         })
 
-        var _exports = [${ _exports }];
+        var _exports = [${ _exports }]
+
+        if ( ${ program.exportAll } ) {
+          Object.keys( cache ).forEach( function ( key ) {
+            if ( ${ keysName }.hasOwnProperty( key ) ) {
+              // ignore
+            } else {
+              // add it to the _exports list
+              _exports.push( key )
+            }
+          } )
+        }
+
+        // remove duplicates from _exports, only affects --verbose output
+        // should not be duplicates unless --export-all and --export are both used as cli arguments
+        // or the same key is --export'ed multiple times
+        _exports = _exports.filter( function ( val, ind, arr ) {
+          return ( arr.indexOf( val ) === ind )
+        } )
+
         _exports.forEach(function (x) {
           var xport = cache[x]
           if (${ program.verbose }) { console.log('webwrap: exporting [' + x + '] type: ' + ( typeof xport ) ) }
