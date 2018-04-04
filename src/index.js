@@ -131,6 +131,27 @@ module.exports = function ( program ) {
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]+/).join(' ').split('\'').join('"')
   var jsText = buffers.scripts.join(';')
 
+  var format = ( program.format || 'iife' ).toLowerCase()
+  var name = program.name
+
+  if ( format === 'umd' && !name ) {
+    var msg = ( 'You must supply output name ( --name <name> ) for UMD bundles' )
+    console.error( msg )
+    process.exit( process.exitCode  )
+  }
+
+
+  switch ( format ) {
+    case 'iife':
+    case 'cjs':
+    case 'umd':
+      break
+    default:
+      var msg = ( 'unrecognized output -f, --format <name>: ' + format )
+      console.error( msg )
+      process.exit( process.exitCode  )
+  }
+
   var output = (`
     ;(function (${ global }) {
       var window = ${ global }
@@ -199,12 +220,52 @@ module.exports = function ( program ) {
           return ( arr.indexOf( val ) === ind )
         } )
 
+        var _exportBundle = {} // only for CJS and UMD
+
         _exports.forEach(function (x) {
           var xport = cache[x]
+
           if (${ program.verbose }) { console.log('webwrap: exporting [' + x + '] type: ' + ( typeof xport ) ) }
-          window[x] = cache[x] // export attribute to the true global object
+
+          if ( ${ format === 'iife' } ) {
+            // export attribute to the true global object
+            window[x] = cache[x]
+          }
+
+          if ( ${ ( format === 'cjs' ) || ( format === 'umd' ) } ) {
+            _exportBundle[x] = cache[x]
+          }
         })
+
         cache = undefined // put cache up for garbage collection
+
+        if ( ${ format === 'cjs' } ) {
+          module.exports = _exportBundle
+        }
+
+        if ( ${ format === 'umd' } ) {
+          // ref: https://github.com/umdjs/umd/blob/master/templates/returnExports.js
+          // if the module has no dependencies, the above pattern can be simplified to
+          ;(function (root, factory) {
+            if (typeof define === 'function' && define.amd) {
+              // AMD. Register as an anonymous module.
+              define([], factory);
+            } else if (typeof module === 'object' && module.exports) {
+              // Node. Does not work with strict CommonJS, but
+              // only CommonJS-like environments that support module.exports,
+              // like Node.
+              module.exports = factory();
+            } else {
+              // Browser globals (root is window)
+              root[ '${ name }' ] = factory();
+            }
+          }(typeof self !== 'undefined' ? self : this, function () {
+            // Just return a value to define the module export.
+            // This example returns an object, but the module
+            // can return a function as the exported value.
+            return _exportBundle;
+          }));
+        }
       })()
     })(window || this);
   `)

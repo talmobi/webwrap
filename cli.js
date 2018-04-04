@@ -15,6 +15,8 @@ program
 .option( '-d, --detect', 'detect and report implicit globals only' )
 .option( '-C, --context <name>', 'global context key name, defaults to `window`' )
 .option( '-v, --verbose', 'verbose output, -v, -vv', increaseVerbosity, 0 )
+.option( '-f, --format <name>', 'cjs, umd, iife ( iife by default )' )
+.option( '-n, --name <name>', 'export name ( required for umd )' )
 .option( '-o, --output <file>', 'output file ( stdout by default )' )
 .option( '-x, --export [name]', 'print help text', addExport, [] )
 .option( '-a, --export-all', 'export everything' )
@@ -28,6 +30,11 @@ program
 } )
 .parse( process.argv )
 
+if ( program.exit1 ) process.exitCode = 1
+
+// don't use the implicit program.name() function
+if ( typeof program.name !== 'string' ) program.name = ''
+
 program.context = program.context || 'window'
 
 function increaseVerbosity ( v, total ) {
@@ -40,6 +47,11 @@ function addExport ( val, list ) {
 }
 
 var output = require( './dist/bundle.js' )( program )
+
+if ( output == null ) {
+  console.error( 'Error: output was: ' + output )
+  process.exit( process.exitCode )
+}
 
 // check for syntax error on output
 var passlint = require( 'passlint' )
