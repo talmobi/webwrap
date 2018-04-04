@@ -131,7 +131,7 @@ module.exports = function ( program ) {
   var cssText = buffers.styles.join('\n\n').split(/[\r\n\t\v]+/).join(' ').split('\'').join('"')
   var jsText = buffers.scripts.join(';')
 
-  var format = ( program.format || 'iife' ).toLowerCase()
+  var format = program.format
   var name = program.name
 
   if ( format === 'umd' && !name ) {

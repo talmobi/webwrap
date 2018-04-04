@@ -39,6 +39,14 @@ function parseProgram ( argv ) {
   } )
   .parse( _argv.concat( argv ) )
 
+  if ( program.exit1 ) process.exitCode = 1
+
+  if ( typeof program.format !== 'string' ) program.format = 'iife'
+  program.format = program.format.toLowerCase()
+
+  // don't use the implicit program.name() function
+  if ( typeof program.name !== 'string' ) program.name = ''
+
   program.context = program.context || 'window'
 
   function increaseVerbosity ( v, total ) {
