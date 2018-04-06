@@ -189,7 +189,14 @@ module.exports = function ( program ) {
         Object.keys(window).forEach(function (key) {
           if (key.indexOf('webkit') === -1) { // skip deprecated attributes
             cache[key] = window[key] // cache it for potential exports
-            if (!${ keysName }[key]) window[key] = undefined // remove leaked attribute
+            if (!${ keysName }[key]) {
+              // remove leaked attribute using defineProperty
+              // since window[key] = undefined might throw error if writable is false
+              Object.defineProperty( window, key, {
+                writable: true,
+                value: undefined
+              } )
+            }
           }
         })
 
