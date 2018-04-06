@@ -191,11 +191,16 @@ module.exports = function ( program ) {
             cache[key] = window[key] // cache it for potential exports
             if (!${ keysName }[key]) {
               // remove leaked attribute using defineProperty
-              // since window[key] = undefined might throw error if writable is false
-              Object.defineProperty( window, key, {
-                writable: true,
-                value: undefined
-              } )
+              try {
+                window[key] = undefined
+              } catch ( err ) {
+                // overwrite with Object.defineProperty in
+                // case attribute is unwritable ( strict mode )
+                Object.defineProperty( window, key, {
+                  writable: true,
+                  value: undefined
+                } )
+              }
             }
           }
         })
@@ -203,7 +208,16 @@ module.exports = function ( program ) {
         Object.keys(${ keysName }).forEach(function (key) {
           if (window[key] !== ${ keysName }[key]) {
             // restore overwritten attribute from original
-            window[key] = ${ keysName }[key]
+            try {
+              window[key] = ${ keysName }[key]
+            } catch ( err ) {
+              // overwrite with Object.defineProperty in
+              // case attribute is unwritable ( strict mode )
+              Object.defineProperty( window, key, {
+                writable: true,
+                value: ${ keysName }[key]
+              } )
+            }
           }
         })
 
